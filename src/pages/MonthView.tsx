@@ -4,10 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import { buildMonthGrid } from '../utils/calendar'
 import { useEvents } from '../hooks/useEvents'
 
-export default function MonthView() {
+interface MonthViewProps {
+  initialAnchor?: string
+}
+
+export default function MonthView({ initialAnchor }: MonthViewProps = {}) {
   const today = dayjs().startOf('day')
-  const [anchor, setAnchor] = useState(today.format('YYYY-MM-DDTHH:mm:ss'))
-  const rangeStart = dayjs(anchor).startOf('month').startOf('week').add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
+  const [anchor, setAnchor] = useState(initialAnchor ?? today.format('YYYY-MM-DDTHH:mm:ss'))
+  const base = dayjs(anchor).startOf('month')
+  const rangeStart = base.subtract((base.day() + 6) % 7, 'day').format('YYYY-MM-DDTHH:mm:ss')
   const rangeEnd = dayjs(anchor).endOf('month').endOf('week').add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
   const { events } = useEvents({ rangeStart, rangeEnd })
   const grid = useMemo(() => buildMonthGrid(anchor), [anchor])

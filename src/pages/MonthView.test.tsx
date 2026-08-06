@@ -19,9 +19,9 @@ describe('MonthView', () => {
     expect(screen.getByTestId('month-grid')).toBeInTheDocument()
   })
 
-  it('显示当天有事件的日子', async () => {
+  it('显示锚定月份内有事件的日子', async () => {
     await addEvent({ title: '开会', startTime: '2026-08-06T09:00:00', endTime: '2026-08-06T10:00:00', allDay: false, reminderOffsets: [], repeat: 'none' })
-    render(<MemoryRouter><MonthView /></MemoryRouter>)
+    render(<MemoryRouter><MonthView initialAnchor="2026-08-01T00:00:00" /></MemoryRouter>)
     const cell = await screen.findByTestId('month-cell-2026-08-06')
     await waitFor(() => expect(cell).toHaveTextContent('开会'))
   })
