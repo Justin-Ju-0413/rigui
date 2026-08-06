@@ -23,7 +23,7 @@ export async function parseEventToInput(
       { role: 'user' as const, content: user },
     ]
     const result = await chatCompletion(config, messages, { responseFormat: 'json_object', temperature: 0.1, maxTokens: 600 })
-    if (result.errorKind) return { ok: false, errors: [result.errorMessage ?? `LLM 调用失败：${result.errorKind}`] }
+    if (result.errorKind) return { ok: false, errors: [`LLM: ${result.errorMessage ?? result.errorKind}`] }
     if (result.content === null) return { ok: false, errors: ['LLM 未返回内容'] }
     return validateParsedEvent(tryParseJson(result.content))
   }

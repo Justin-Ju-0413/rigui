@@ -69,9 +69,11 @@ describe('parseEventToInput', () => {
     expect(r.ok).toBe(false)
     if (!r.ok) expect(r.errors.some(e => e.includes('title'))).toBe(true)
   })
-  it('LLM 调用失败返回错误', async () => {
-    __setLLMTransport(async () => { throw new TypeError('Failed to fetch') })
+  it('LLM 调用失败返回错误且不重试', async () => {
+    let calls = 0
+    __setLLMTransport(async () => { calls += 1; throw new TypeError('Failed to fetch') })
     const r = await parseEventToInput(config, '开会', NOW, [])
+    expect(calls).toBe(1)
     expect(r.ok).toBe(false)
   })
   it('重试请求携带首次校验错误提示', async () => {
