@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { LLMProvider } from './context/LLMContext'
+import { registerServiceWorker } from './notify/register'
+import { startForegroundScheduler } from './notify/foreground'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,3 +16,5 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+void registerServiceWorker()
+startForegroundScheduler()
