@@ -67,4 +67,9 @@ describe('findConflicts', () => {
     const candidate = ev('午休', '2026-08-06T12:00:00', '2026-08-06T13:00:00')
     expect(findConflicts(existing, candidate, '2026-08-01T00:00:00', '2026-08-31T23:59:59')).toEqual([])
   })
+  it('重叠但同 id 的既有事件视为自身，跳过', () => {
+    const existing = [ev('正在编辑的事件', '2026-08-06T09:00:00', '2026-08-06T10:00:00')]
+    const candidate = ev('新会', '2026-08-06T09:30:00', '2026-08-06T10:30:00')
+    expect(findConflicts(existing, candidate, '2026-08-01T00:00:00', '2026-08-31T23:59:59')).toEqual([])
+  })
 })
