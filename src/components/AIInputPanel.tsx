@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLLMSettings } from '../hooks/useLLMSettings'
+import { useLLMConfig } from '../context/LLMContext'
 import { useEvents } from '../hooks/useEvents'
 import { parseEventToInput } from '../ai/parseEvent'
 import { findConflicts } from '../planner/conflicts'
@@ -9,7 +9,7 @@ import EventPreviewCard from './EventPreviewCard'
 import dayjs from 'dayjs'
 
 export default function AIInputPanel() {
-  const { config } = useLLMSettings()
+  const { config } = useLLMConfig()
   const { save } = useEvents()
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')

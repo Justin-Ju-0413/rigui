@@ -2,11 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, beforeEach } from 'vitest'
 import AIInputPanel from './AIInputPanel'
+import { LLMProvider } from '../context/LLMContext'
 import { __setLLMTransport } from '../llm/client'
 import { db } from '../db/schema'
 import { setSetting } from '../db/settings'
 
-const mount = () => render(<AIInputPanel />)
+const mount = () => render(<LLMProvider><AIInputPanel /></LLMProvider>)
 
 describe('AIInputPanel', () => {
   beforeEach(async () => {
