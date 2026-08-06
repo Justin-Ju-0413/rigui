@@ -6,6 +6,7 @@ import WeekView from './pages/WeekView'
 import ListView from './pages/ListView'
 import GoalView from './pages/GoalView'
 import SettingsView from './pages/SettingsView'
+import AIInputPanel from './components/AIInputPanel'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/goals" element={<GoalView />} />
           <Route path="/settings" element={<SettingsView />} />
         </Routes>
+        <AIInputPanel />
       </main>
       <BottomNav />
     </div>
