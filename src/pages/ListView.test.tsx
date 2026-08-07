@@ -24,6 +24,14 @@ describe('ListView', () => {
     expect(screen.getByText('明天的会')).toBeInTheDocument()
   })
 
+  it('昨天的事件归入已过去分组', async () => {
+    await addEvent({ title: '昨天的事', startTime: iso(-1), endTime: iso(-1, 10), allDay: false, reminderOffsets: [], repeat: 'none' })
+    render(<MemoryRouter><ListView /></MemoryRouter>)
+    expect(await screen.findByText('已过去')).toBeInTheDocument()
+    expect(screen.getByTestId('group-past')).toHaveTextContent('昨天的事')
+    expect(screen.getByTestId('group-today')).not.toHaveTextContent('昨天的事')
+  })
+
   it('勾选切换完成状态', async () => {
     await addEvent({ title: '待办', startTime: iso(0), endTime: iso(0, 10), allDay: false, reminderOffsets: [], repeat: 'none' })
     const user = (await import('@testing-library/user-event')).default
