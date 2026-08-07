@@ -53,7 +53,10 @@ describe('SettingsView', () => {
     try {
       const user = userEvent.setup()
       const { container } = render(<MemoryRouter><SettingsView /></MemoryRouter>)
-      const file = new File([JSON.stringify({ app: 'rigui', version: 1, events: [{ title: '导入的会', startTime: '2026-08-06T09:00:00', endTime: '2026-08-06T10:00:00', allDay: false, reminderOffsets: [], repeat: 'none' }] })], 'backup.json', { type: 'application/json' })
+      const file = Object.assign(
+        new File(['ignored'], 'backup.json', { type: 'application/json' }),
+        { text: async () => JSON.stringify({ app: 'rigui', version: 1, events: [{ title: '导入的会', startTime: '2026-08-06T09:00:00', endTime: '2026-08-06T10:00:00', allDay: false, reminderOffsets: [], repeat: 'none' }] }) },
+      )
       const input = container.querySelector('input[type="file"]') as HTMLInputElement
       await user.upload(input, file)
       expect(await screen.findByText('已导入 1 条')).toBeInTheDocument()
