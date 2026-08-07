@@ -12,9 +12,10 @@ const respond = (content: string) =>
 
 describe('buildParsePrompt', () => {
   it('注入当前时间、时区与近期日程', () => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
     const p = buildParsePrompt('下周二下午3点和老王开会', NOW, ['2026-08-06 09:00 开会'])
     expect(p.system).toContain('2026-08-06')
-    expect(p.system).toContain('Asia/Shanghai')
+    expect(p.system).toContain(tz)
     expect(p.system).toContain('2026-08-06 09:00 开会')
     expect(p.user).toContain('下周二下午3点和老王开会')
   })
