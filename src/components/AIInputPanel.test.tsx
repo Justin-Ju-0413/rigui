@@ -36,9 +36,30 @@ describe('AIInputPanel', () => {
     await user.type(screen.getByLabelText('描述你的日程'), '下周二下午3点开会')
     await user.click(screen.getByRole('button', { name: '解析' }))
     expect(await screen.findByTestId('preview-card')).toBeInTheDocument()
-    expect(screen.getByText('开会')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('开会')).toBeInTheDocument()
+    expect(screen.getByLabelText('编辑开始时间')).toHaveValue('2026-08-11T15:00')
+    expect(screen.getByLabelText('编辑结束时间')).toHaveValue('2026-08-11T16:00')
     await user.click(screen.getByRole('button', { name: '确认创建' }))
     await waitFor(async () => expect(await db.events.count()).toBe(1))
+  })
+
+  it('预览卡片可编辑标题，确认后入库编辑值', async () => {
+    __setLLMTransport(async () => new Response(JSON.stringify({
+      choices: [{ message: { content: '{"title":"开会","startTime":"2026-08-11T15:00:00","endTime":"2026-08-11T16:00:00"}' } }],
+    }), { status: 200 }))
+    const user = userEvent.setup()
+    mount()
+    await user.click(screen.getByRole('button', { name: 'AI 输入' }))
+    await user.type(screen.getByLabelText('描述你的日程'), '下周二下午3点开会')
+    await user.click(screen.getByRole('button', { name: '解析' }))
+    const titleInput = await screen.findByLabelText('编辑标题')
+    await user.clear(titleInput)
+    await user.type(titleInput, '改过的会')
+    await user.click(screen.getByRole('button', { name: '确认创建' }))
+    await waitFor(async () => expect(await db.events.count()).toBe(1))
+    const saved = await db.events.toArray()
+    expect(saved[0].title).toBe('改过的会')
+    expect(saved[0].startTime).toBe('2026-08-11T15:00:00')
   })
 
   it('解析失败展示错误信息', async () => {
