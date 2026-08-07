@@ -10,6 +10,19 @@ describe('exportJson / parseImportJson', () => {
     if (parsed.ok) expect(parsed.events).toEqual(events)
   })
 
+  it('导入剥离 id/createdAt/completed', () => {
+    const parsed = parseImportJson(JSON.stringify({
+      events: [{ id: 999, title: '开会', startTime: '2026-08-06T09:00:00', endTime: '2026-08-06T10:00:00', allDay: false, reminderOffsets: [10], repeat: 'none', createdAt: 'x', completed: true }],
+    }))
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) {
+      expect(parsed.events[0]).toEqual({ title: '开会', startTime: '2026-08-06T09:00:00', endTime: '2026-08-06T10:00:00', allDay: false, reminderOffsets: [10], repeat: 'none' })
+      expect(parsed.events[0]).not.toHaveProperty('id')
+      expect(parsed.events[0]).not.toHaveProperty('createdAt')
+      expect(parsed.events[0]).not.toHaveProperty('completed')
+    }
+  })
+
   it('非法 JSON 返回错误', () => {
     const parsed = parseImportJson('not json')
     expect(parsed.ok).toBe(false)

@@ -13,13 +13,16 @@ export function parseImportJson(raw: string): { ok: true; events: ExportEvent[] 
     return { ok: false, error: '缺少 events 数组' }
   }
   const events = (data as { events: unknown[] }).events
+  const sanitized: ExportEvent[] = []
   for (const item of events) {
     const e = item as Record<string, unknown>
     if (typeof e.title !== 'string' || typeof e.startTime !== 'string' || typeof e.endTime !== 'string') {
       return { ok: false, error: '事件缺少 title/startTime/endTime' }
     }
+    const { title, startTime, endTime, allDay, location, reminderOffsets, repeat, relatedGoalId } = e
+    sanitized.push({ title, startTime, endTime, allDay, location, reminderOffsets, repeat, relatedGoalId } as ExportEvent)
   }
-  return { ok: true, events: events as ExportEvent[] }
+  return { ok: true, events: sanitized }
 }
 
 export function downloadFile(filename: string, content: string, mime: string): void {
