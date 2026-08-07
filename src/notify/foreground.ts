@@ -33,12 +33,14 @@ export function startForegroundScheduler(opts: SchedulerOpts = {}): () => void {
       const notified = loadNotified()
       const due = dueReminders(events, now(), notified)
       if (due.length === 0) return
-      for (const d of due) notified.add(d.id)
-      saveNotified(notified)
       for (const d of due) {
         const fn = notify ?? ((title: string, body: string) => { if (Notification.permission === 'granted') new Notification(title, { body }) })
-        fn(d.event.title, `开始时间 ${dayjs(d.event.startTime).format('HH:mm')}`)
+        try {
+          fn(d.event.title, `开始时间 ${dayjs(d.event.startTime).format('HH:mm')}`)
+          notified.add(d.id)
+        } catch (e) { onError(e) }
       }
+      saveNotified(notified)
     } catch (e) { onError(e) }
   }
   void tick()
