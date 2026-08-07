@@ -28,6 +28,7 @@ test('自然语言创建日程全流程：输入→预览→确认→月视图�
   await expect(page.getByTestId('preview-card').getByText('和老王开会')).toBeVisible()
   await page.getByRole('button', { name: '确认创建' }).click()
   await expect(page.getByTestId('ai-panel')).toBeHidden()
+  await expect(page.getByTestId('month-cell-2026-08-11')).toContainText('和老王开会')
 })
 
 test('AI 解析失败展示错误且不创建', async ({ page }) => {

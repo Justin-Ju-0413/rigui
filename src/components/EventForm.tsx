@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import type { CalendarEvent, RepeatRule } from '../db/types'
 import { findConflicts } from '../planner/conflicts'
 import { useEvents } from '../hooks/useEvents'
+import { notifyEventsChanged } from '../events/eventBus'
 import { ensureNotificationPermission } from '../notify/permission'
 
 interface Props {
@@ -55,6 +56,7 @@ export default function EventForm({ initial, defaultStart, onSaved, onCancel }: 
     if (found.length > 0) return
     if (reminder > 0) await ensureNotificationPermission()
     const id = initial?.id ? (await update(initial.id, input), initial.id) : await save(input)
+    notifyEventsChanged()
     onSaved(id)
   }
 
