@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { useLLMSettings } from '../hooks/useLLMSettings'
 import { chatCompletion } from '../llm/client'
@@ -16,13 +16,15 @@ export default function SettingsView() {
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  const [prevConfig, setPrevConfig] = useState(config)
+  if (config !== prevConfig) {
+    setPrevConfig(config)
     if (config) {
       setBaseUrl(config.baseUrl)
       setApiKey(config.apiKey)
       setModel(config.model)
     }
-  }, [config])
+  }
 
   const handleExportIcs = async (range?: { start: string; end: string }) => {
     const events = await getAllEvents()

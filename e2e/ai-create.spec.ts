@@ -28,7 +28,7 @@ test('自然语言创建日程全流程：输入→预览→确认→月视图�
   await page.getByLabel('描述你的日程').fill('下周二下午3点和老王开会')
   await page.getByRole('button', { name: '解析' }).click()
   await expect(page.getByTestId('preview-card')).toBeVisible()
-  await expect(page.getByTestId('preview-card').getByDisplayValue('和老王开会')).toBeVisible()
+  await expect(page.getByTestId('preview-card').getByLabel('编辑标题')).toHaveValue('和老王开会')
   await page.getByRole('button', { name: '确认创建' }).click()
   await expect(page.getByTestId('ai-panel')).toBeHidden()
   await expect(page.getByTestId(`month-cell-${day}`)).toContainText('和老王开会')

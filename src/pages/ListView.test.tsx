@@ -27,7 +27,7 @@ describe('ListView', () => {
   it('昨天的事件归入已过去分组', async () => {
     await addEvent({ title: '昨天的事', startTime: iso(-1), endTime: iso(-1, 10), allDay: false, reminderOffsets: [], repeat: 'none' })
     render(<MemoryRouter><ListView /></MemoryRouter>)
-    expect(await screen.findByText('已过去')).toBeInTheDocument()
+    await screen.findByText('昨天的事')
     expect(screen.getByTestId('group-past')).toHaveTextContent('昨天的事')
     expect(screen.getByTestId('group-today')).not.toHaveTextContent('昨天的事')
   })
