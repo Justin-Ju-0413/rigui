@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLLMConfig } from '../context/LLMContext'
 import { useEvents } from '../hooks/useEvents'
 import { notifyEventsChanged } from '../events/eventBus'
-import { parseEventToInput } from '../ai/parseEvent'
+import { parseEventToInput, validateParsedEvent } from '../ai/parseEvent'
 import { findConflicts } from '../planner/conflicts'
 import { getAllEvents } from '../db/crud'
 import type { ParsedEventInput } from '../ai/schema'
@@ -19,6 +19,22 @@ export default function AIInputPanel() {
   const [parsed, setParsed] = useState<ParsedEventInput | null>(null)
   const [conflicts, setConflicts] = useState<string[]>([])
 
+  const refreshConflicts = async (candidate: ParsedEventInput) => {
+    const fullCandidate = {
+      ...candidate,
+      id: undefined,
+      completed: false,
+      createdAt: '',
+      startTime: candidate.startTime,
+      endTime: candidate.endTime ?? dayjs(candidate.startTime).add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
+      allDay: candidate.allDay ?? false,
+      reminderOffsets: candidate.reminderOffsets ?? [],
+      repeat: candidate.repeat ?? 'none',
+    }
+    const found = findConflicts(await getAllEvents(), fullCandidate, '2000-01-01T00:00:00', '2100-12-31T23:59:59')
+    setConflicts(found.map(e => `${e.title}（${dayjs(e.startTime).format('MM-DD HH:mm')}）`))
+  }
+
   const handleParse = async () => {
     if (!config) { setError('请先在设置页配置 LLM'); return }
     if (!text.trim()) { setError('请输入日程描述'); return }
@@ -28,23 +44,13 @@ export default function AIInputPanel() {
     setLoading(false)
     if (!result.ok) { setError(`解析失败：${result.errors.join('；')}`); setParsed(null); return }
     setParsed(result.data)
-    const candidate = {
-      ...result.data,
-      id: undefined,
-      completed: false,
-      createdAt: '',
-      startTime: result.data.startTime,
-      endTime: result.data.endTime ?? dayjs(result.data.startTime).add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
-      allDay: result.data.allDay ?? false,
-      reminderOffsets: result.data.reminderOffsets ?? [],
-      repeat: result.data.repeat ?? 'none',
-    }
-    const found = findConflicts(await getAllEvents(), candidate, '2000-01-01T00:00:00', '2100-12-31T23:59:59')
-    setConflicts(found.map(e => `${e.title}（${dayjs(e.startTime).format('MM-DD HH:mm')}）`))
+    void refreshConflicts(result.data)
   }
 
   const handleConfirm = async () => {
     if (!parsed) return
+    const check = validateParsedEvent(parsed)
+    if (!check.ok) { setError(`日程信息有误：${check.errors.join('；')}`); return }
     await save({
       title: parsed.title,
       startTime: parsed.startTime,
@@ -60,7 +66,12 @@ export default function AIInputPanel() {
     setText('')
   }
 
-  const handleEdit = (patch: Partial<ParsedEventInput>) => setParsed(p => (p ? { ...p, ...patch } : p))
+  const handleEdit = (patch: Partial<ParsedEventInput>) => {
+    if (!parsed) return
+    const next = { ...parsed, ...patch }
+    setParsed(next)
+    void refreshConflicts(next)
+  }
 
   return (
     <>

@@ -41,4 +41,10 @@ describe('generateIcs', () => {
     const ics = generateIcs([ev('会;议,分', '2026-08-06T09:00:00', '2026-08-06T10:00:00')])
     expect(ics).toContain('SUMMARY:会\\;议\\,分')
   })
+
+  it('以 CRLF 结尾（RFC 5545 要求每行 CRLF）', () => {
+    const ics = generateIcs([ev('会', '2026-08-06T09:00:00', '2026-08-06T10:00:00')])
+    expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
+    expect(ics).not.toMatch(/\r\n\r\n/)
+  })
 })

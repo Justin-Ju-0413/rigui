@@ -4,7 +4,7 @@
 
 - 自然语言创建日程（OpenAI 兼容 API，数据仅存本地）
 - 月/周/日/列表视图，冲突检测
-- Web 通知提醒（前台 30s + Service Worker 兜底）
+- Web 通知提醒（前台调度约 30s 触发；Service Worker 处理通知点击）
 - ICS 导出（兼容 Apple/Google 日历）、JSON 备份导入导出
 
 ## 快速开始

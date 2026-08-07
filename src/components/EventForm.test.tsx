@@ -29,6 +29,18 @@ describe('EventForm', () => {
     expect(await screen.findByText('结束时间必须晚于开始时间')).toBeInTheDocument()
   })
 
+  it('默认结束时间 = 默认开始时间 + 1 小时', () => {
+    render(<EventForm onSaved={() => {}} onCancel={() => {}} defaultStart="2026-08-06T09:00:00" />)
+    expect(screen.getByLabelText('开始时间')).toHaveValue('2026-08-06T09:00')
+    expect(screen.getByLabelText('结束时间')).toHaveValue('2026-08-06T10:00')
+  })
+
+  it('编辑时缺省结束时间 = 初始开始时间 + 1 小时', () => {
+    render(<EventForm onSaved={() => {}} onCancel={() => {}} initial={{ title: '旧会', startTime: '2026-08-06T14:00:00' }} />)
+    expect(screen.getByLabelText('开始时间')).toHaveValue('2026-08-06T14:00')
+    expect(screen.getByLabelText('结束时间')).toHaveValue('2026-08-06T15:00')
+  })
+
   it('合法提交调用 onSaved 并写入库', async () => {
     const user = userEvent.setup()
     let savedId: number | null = null

@@ -17,7 +17,7 @@ export default function EventForm({ initial, defaultStart, onSaved, onCancel }: 
   const { events, save, update } = useEvents()
   const [title, setTitle] = useState(initial?.title ?? '')
   const [startTime, setStartTime] = useState(initial?.startTime ?? defaultStart ?? dayjs().format('YYYY-MM-DDTHH:mm'))
-  const [endTime, setEndTime] = useState(initial?.endTime ?? dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm'))
+  const [endTime, setEndTime] = useState(initial?.endTime ?? dayjs(initial?.startTime ?? defaultStart ?? dayjs()).add(1, 'hour').format('YYYY-MM-DDTHH:mm'))
   const [location, setLocation] = useState(initial?.location ?? '')
   const [reminder, setReminder] = useState(initial?.reminderOffsets?.[0] ?? 0)
   const [repeat, setRepeat] = useState<RepeatRule>(initial?.repeat ?? 'none')

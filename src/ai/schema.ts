@@ -23,6 +23,9 @@ export function validateParsedEvent(raw: unknown): ValidateResult {
   if (typeof obj.title !== 'string' || obj.title.trim() === '') errors.push('缺少 title')
   if (typeof obj.startTime !== 'string' || !dayjs(obj.startTime).isValid()) errors.push('startTime 必须是合法时间')
   if (obj.endTime !== undefined && (typeof obj.endTime !== 'string' || !dayjs(obj.endTime).isValid())) errors.push('endTime 必须是合法时间')
+  if (typeof obj.startTime === 'string' && dayjs(obj.startTime).isValid() && typeof obj.endTime === 'string' && dayjs(obj.endTime).isValid() && !dayjs(obj.endTime).isAfter(dayjs(obj.startTime))) {
+    errors.push('endTime 必须晚于 startTime')
+  }
   if (obj.allDay !== undefined && typeof obj.allDay !== 'boolean') errors.push('allDay 必须是布尔值')
   if (obj.location !== undefined && typeof obj.location !== 'string') errors.push('location 必须是字符串')
   if (obj.reminderOffsets !== undefined && (!Array.isArray(obj.reminderOffsets) || obj.reminderOffsets.some(o => typeof o !== 'number' || o < 0))) {

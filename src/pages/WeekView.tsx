@@ -1,12 +1,13 @@
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useEvents } from '../hooks/useEvents'
 
 dayjs.extend(weekOfYear)
 
 export default function WeekView() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const anchor = params.get('date') ?? dayjs().format('YYYY-MM-DD')
   const monday = dayjs(anchor).startOf('week').add(1, 'day')
   const days = Array.from({ length: 7 }, (_, i) => monday.add(i, 'day'))
@@ -16,7 +17,10 @@ export default function WeekView() {
 
   return (
     <div className="p-4" data-testid="week-view">
-      <h1 className="mb-2 text-lg font-semibold">{dayjs(anchor).format('YYYY年M月')} 第{dayjs(anchor).week()}周</h1>
+      <header className="mb-2 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">{dayjs(anchor).format('YYYY年M月')} 第{dayjs(anchor).week()}周</h1>
+        <button aria-label="月视图" onClick={() => navigate('/')} className="rounded-lg border px-2 py-1 text-sm">月</button>
+      </header>
       <div data-testid="week-grid" className="grid grid-cols-7 gap-1">
         {days.map(day => {
           const key = day.format('YYYY-MM-DD')

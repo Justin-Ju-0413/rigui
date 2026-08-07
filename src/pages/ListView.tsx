@@ -2,20 +2,20 @@ import dayjs from 'dayjs'
 import { useEvents } from '../hooks/useEvents'
 import EventItem from '../components/EventItem'
 
-type GroupKey = 'today' | 'tomorrow' | 'week' | 'later'
+type GroupKey = 'today' | 'tomorrow' | 'week' | 'later' | 'past'
 
-const GROUP_LABEL: Record<GroupKey, string> = { today: '今天', tomorrow: '明天', week: '本周', later: '以后' }
+const GROUP_LABEL: Record<GroupKey, string> = { today: '今天', tomorrow: '明天', week: '本周', later: '以后', past: '已过去' }
 
 export default function ListView() {
   const { events, toggle } = useEvents()
 
-  const groups: Record<GroupKey, typeof events> = { today: [], tomorrow: [], week: [], later: [] }
+  const groups: Record<GroupKey, typeof events> = { today: [], tomorrow: [], week: [], later: [], past: [] }
   const now = dayjs().startOf('day')
   const tomorrow = now.add(1, 'day')
   const weekEnd = now.add(6, 'day')
   for (const ev of events) {
     const start = dayjs(ev.startTime)
-    const key: GroupKey = start.isBefore(tomorrow) ? 'today' : start.isBefore(tomorrow.add(1, 'day')) ? 'tomorrow' : start.isBefore(weekEnd) ? 'week' : 'later'
+    const key: GroupKey = start.isBefore(now) ? 'past' : start.isBefore(tomorrow) ? 'today' : start.isBefore(tomorrow.add(1, 'day')) ? 'tomorrow' : start.isBefore(weekEnd) ? 'week' : 'later'
     groups[key].push(ev)
   }
   const sortByStart = (list: typeof events) =>
@@ -24,7 +24,7 @@ export default function ListView() {
   return (
     <div className="p-4" data-testid="list-view">
       <h1 className="mb-2 text-lg font-semibold">列表</h1>
-      {(['today', 'tomorrow', 'week', 'later'] as GroupKey[]).map(key => (
+      {(['today', 'tomorrow', 'week', 'later', 'past'] as GroupKey[]).map(key => (
         <section key={key} data-testid={`group-${key}`}>
           <h2 className="mt-2 text-sm font-semibold text-gray-600">{GROUP_LABEL[key]}</h2>
           <div className="space-y-1">
