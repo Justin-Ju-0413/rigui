@@ -39,6 +39,20 @@ describe('validateParsedEvent', () => {
     const r = validateParsedEvent({ title: '开会', startTime: '2026-08-11T15:00:00', repeat: 'yearly' })
     expect(r.ok).toBe(false)
   })
+  it('endTime 早于 startTime 报错', () => {
+    const r = validateParsedEvent({ title: '开会', startTime: '2026-08-11T15:00:00', endTime: '2026-08-11T14:00:00' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors).toContain('endTime 必须晚于 startTime')
+  })
+  it('endTime 等于 startTime 报错', () => {
+    const r = validateParsedEvent({ title: '开会', startTime: '2026-08-11T15:00:00', endTime: '2026-08-11T15:00:00' })
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.errors).toContain('endTime 必须晚于 startTime')
+  })
+  it('endTime 晚于 startTime 通过', () => {
+    const r = validateParsedEvent({ title: '开会', startTime: '2026-08-11T15:00:00', endTime: '2026-08-11T16:00:00' })
+    expect(r.ok).toBe(true)
+  })
   it('非法输入（非对象）报错', () => {
     const r = validateParsedEvent('oops')
     expect(r.ok).toBe(false)
