@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { startOfDay, endOfDay } from '../utils/date'
 import { useEvents } from '../hooks/useEvents'
 import EventForm from '../components/EventForm'
@@ -10,6 +10,7 @@ const HOURS = Array.from({ length: 24 }, (_, h) => h)
 
 export default function DayView() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const date = params.get('date') ?? dayjs().format('YYYY-MM-DD')
   const dayStart = startOfDay(date)
   const dayEnd = endOfDay(date)
@@ -21,7 +22,10 @@ export default function DayView() {
     <div className="p-4" data-testid="day-view">
       <header className="mb-2 flex items-center justify-between">
         <h1 className="text-lg font-semibold">{dayjs(date).format('YYYY年M月D日')}</h1>
-        <button aria-label="新建" onClick={() => setCreating(true)} className="rounded-lg bg-indigo-600 px-3 py-1 text-white">+</button>
+        <div className="flex gap-2">
+          <button aria-label="周视图" onClick={() => navigate(`/week?date=${date}`)} className="rounded-lg border px-2 py-1 text-sm">周</button>
+          <button aria-label="新建" onClick={() => setCreating(true)} className="rounded-lg bg-indigo-600 px-3 py-1 text-white">+</button>
+        </div>
       </header>
       {creating && (
         <EventForm defaultStart={dayjs(`${date}T09:00:00`).format('YYYY-MM-DDTHH:mm')}

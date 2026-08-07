@@ -2,13 +2,17 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import DayView from './DayView'
+import WeekView from './WeekView'
 import { db } from '../db/schema'
 import { addEvent } from '../db/crud'
 
 const renderDay = (date: string) =>
   render(
     <MemoryRouter initialEntries={[`/day?date=${date}`]}>
-      <Routes><Route path="/day" element={<DayView />} /></Routes>
+      <Routes>
+        <Route path="/day" element={<DayView />} />
+        <Route path="/week" element={<WeekView />} />
+      </Routes>
     </MemoryRouter>,
   )
 
@@ -32,5 +36,13 @@ describe('DayView', () => {
     renderDay('2026-08-06')
     await user.click(await screen.findByRole('button', { name: '新建' }))
     expect(screen.getByTestId('event-form')).toBeInTheDocument()
+  })
+
+  it('点周视图按钮跳转到对应周的周视图', async () => {
+    const user = (await import('@testing-library/user-event')).default
+    renderDay('2026-08-06')
+    await user.click(await screen.findByRole('button', { name: '周视图' }))
+    expect(await screen.findByTestId('week-view')).toBeInTheDocument()
+    expect(screen.getByText('2026年8月 第32周')).toBeInTheDocument()
   })
 })
