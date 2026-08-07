@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { useLLMSettings } from '../hooks/useLLMSettings'
 import { chatCompletion } from '../llm/client'
@@ -14,6 +14,14 @@ export default function SettingsView() {
   const [status, setStatus] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (config) {
+      setBaseUrl(config.baseUrl)
+      setApiKey(config.apiKey)
+      setModel(config.model)
+    }
+  }, [config])
 
   const handleExportIcs = async (range?: { start: string; end: string }) => {
     const events = await getAllEvents()
@@ -36,6 +44,7 @@ export default function SettingsView() {
   }
 
   const handleSave = async () => {
+    if (!baseUrl.trim() && !apiKey.trim() && !model.trim()) { setStatus('请先填写完整配置'); return }
     await save({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim(), model: model.trim() })
     setStatus('已保存')
   }
