@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import type { CalendarEvent, RepeatRule } from '../db/types'
 import { findConflicts } from '../planner/conflicts'
 import { useEvents } from '../hooks/useEvents'
+import { ensureNotificationPermission } from '../notify/permission'
 
 interface Props {
   initial?: Partial<CalendarEvent>
@@ -52,6 +53,7 @@ export default function EventForm({ initial, defaultStart, onSaved, onCancel }: 
     const found = findConflicts(events, candidate, '2000-01-01T00:00:00', '2100-12-31T23:59:59')
     setConflicts(found.map(e => `${e.title}（${dayjs(e.startTime).format('MM-DD HH:mm')}）`))
     if (found.length > 0) return
+    if (reminder > 0) await ensureNotificationPermission()
     const id = initial?.id ? (await update(initial.id, input), initial.id) : await save(input)
     onSaved(id)
   }
