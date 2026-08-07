@@ -13,7 +13,7 @@ export default function DayView() {
   const date = params.get('date') ?? dayjs().format('YYYY-MM-DD')
   const dayStart = startOfDay(date)
   const dayEnd = endOfDay(date)
-  const { events, toggle, remove } = useEvents({ rangeStart: dayStart, rangeEnd: dayEnd })
+  const { events, toggle, remove, refresh } = useEvents({ rangeStart: dayStart, rangeEnd: dayEnd })
   const [editing, setEditing] = useState<number | null>(null)
   const [creating, setCreating] = useState(false)
 
@@ -25,12 +25,12 @@ export default function DayView() {
       </header>
       {creating && (
         <EventForm defaultStart={dayjs(`${date}T09:00:00`).format('YYYY-MM-DDTHH:mm')}
-          onSaved={() => setCreating(false)} onCancel={() => setCreating(false)} />
+          onSaved={() => { setCreating(false); void refresh() }} onCancel={() => setCreating(false)} />
       )}
       {editing !== null && (() => {
         const ev = events.find(e => e.id === editing)
         if (!ev) return null
-        return <EventForm initial={ev} onSaved={() => setEditing(null)} onCancel={() => setEditing(null)} />
+        return <EventForm initial={ev} onSaved={() => { setEditing(null); void refresh() }} onCancel={() => setEditing(null)} />
       })()}
       <div data-testid="timeline" className="space-y-0.5">
         {HOURS.map(h => {

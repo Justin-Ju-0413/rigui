@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { addEvent, deleteEvent, getEventsByRange, toggleEventCompleted, updateEvent } from '../db/crud'
+import { subscribeEventsChanged } from '../events/eventBus'
 import type { CalendarEvent } from '../db/types'
 
 export interface UseEventsOptions {
@@ -24,6 +25,8 @@ export function useEvents({ rangeStart, rangeEnd }: UseEventsOptions = {}) {
     firstRender.current = false
     return () => { cancelled = true }
   }, [rangeStart, rangeEnd, reloadTick])
+
+  useEffect(() => subscribeEventsChanged(() => setReloadTick(t => t + 1)), [])
 
   const refresh = () => setReloadTick(t => t + 1)
 

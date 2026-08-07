@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLLMConfig } from '../context/LLMContext'
 import { useEvents } from '../hooks/useEvents'
+import { notifyEventsChanged } from '../events/eventBus'
 import { parseEventToInput } from '../ai/parseEvent'
 import { findConflicts } from '../planner/conflicts'
 import { getAllEvents } from '../db/crud'
@@ -53,6 +54,7 @@ export default function AIInputPanel() {
       reminderOffsets: parsed.reminderOffsets ?? [],
       repeat: parsed.repeat ?? 'none',
     })
+    notifyEventsChanged()
     setOpen(false)
     setParsed(null)
     setText('')
