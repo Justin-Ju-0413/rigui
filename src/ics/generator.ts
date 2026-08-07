@@ -40,5 +40,5 @@ export function generateIcs(events: CalendarEvent[], rangeStart?: string, rangeE
   const blocks = events.flatMap((ev, i) =>
     expandRecurring(ev, start, end).map((instance, j) => buildEvent(instance, `${ev.id ?? i}-${j}@rigui`, dtstamp)),
   )
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//rigui//AI Calendar//CN', 'CALSCALE:GREGORIAN', ...blocks, 'END:VCALENDAR'].join('\r\n')
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//rigui//AI Calendar//CN', 'CALSCALE:GREGORIAN', ...blocks, 'END:VCALENDAR'].join('\r\n') + '\r\n'
 }
