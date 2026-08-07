@@ -5,6 +5,7 @@ import { chatCompletion } from '../llm/client'
 import { addEvent, getAllEvents } from '../db/crud'
 import { generateIcs } from '../ics/generator'
 import { downloadFile, exportJson, parseImportJson } from '../ics/transfer'
+import { notifyEventsChanged } from '../events/eventBus'
 
 export default function SettingsView() {
   const { config, save, hasConfig } = useLLMSettings()
@@ -40,6 +41,7 @@ export default function SettingsView() {
     const parsed = parseImportJson(text)
     if (!parsed.ok) { setImportMsg(`导入失败：${parsed.error}`); return }
     for (const e of parsed.events) await addEvent(e)
+    notifyEventsChanged()
     setImportMsg(`已导入 ${parsed.events.length} 条`)
   }
 
