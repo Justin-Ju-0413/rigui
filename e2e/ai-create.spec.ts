@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
+import dayjs from 'dayjs'
+
+const day = dayjs().date(11).format('YYYY-MM-DD')
 
 const LLM_OK = {
-  choices: [{ message: { content: JSON.stringify({ title: '和老王开会', startTime: '2026-08-11T15:00:00', endTime: '2026-08-11T16:00:00', location: '会议室A' }) } }],
+  choices: [{ message: { content: JSON.stringify({ title: '和老王开会', startTime: `${day}T15:00:00`, endTime: `${day}T16:00:00`, location: '会议室A' }) } }],
 }
 
 async function mockLlm(page: import('@playwright/test').Page) {
@@ -28,7 +31,7 @@ test('自然语言创建日程全流程：输入→预览→确认→月视图�
   await expect(page.getByTestId('preview-card').getByText('和老王开会')).toBeVisible()
   await page.getByRole('button', { name: '确认创建' }).click()
   await expect(page.getByTestId('ai-panel')).toBeHidden()
-  await expect(page.getByTestId('month-cell-2026-08-11')).toContainText('和老王开会')
+  await expect(page.getByTestId(`month-cell-${day}`)).toContainText('和老王开会')
 })
 
 test('AI 解析失败展示错误且不创建', async ({ page }) => {
