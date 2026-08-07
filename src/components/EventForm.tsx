@@ -63,42 +63,42 @@ export default function EventForm({ initial, defaultStart, onSaved, onCancel }: 
   return (
     <form onSubmit={e => { e.preventDefault(); void handleSubmit() }} className="space-y-3 p-4" data-testid="event-form">
       <input data-testid="title-input" aria-label="标题" value={title} onChange={e => setTitle(e.target.value)}
-        placeholder="事件标题" className="w-full rounded-lg border p-2" />
+        placeholder="事件标题" className="glass-input" />
       <div className="flex gap-2">
-        <label className="flex-1 text-sm">开始时间
+        <label className="flex-1 text-xs font-medium text-[var(--text-secondary)]">开始时间
           <input type="datetime-local" aria-label="开始时间" value={startTime} onChange={e => setStartTime(e.target.value)}
-            className="w-full rounded-lg border p-2" />
+            className="glass-input mt-1" />
         </label>
-        <label className="flex-1 text-sm">结束时间
+        <label className="flex-1 text-xs font-medium text-[var(--text-secondary)]">结束时间
           <input type="datetime-local" aria-label="结束时间" value={endTime} onChange={e => setEndTime(e.target.value)}
-            className="w-full rounded-lg border p-2" />
+            className="glass-input mt-1" />
         </label>
       </div>
       <div className="flex gap-2">
-        <label className="flex-1 text-sm">地点
-          <input aria-label="地点" value={location} onChange={e => setLocation(e.target.value)} className="w-full rounded-lg border p-2" />
+        <label className="flex-1 text-xs font-medium text-[var(--text-secondary)]">地点
+          <input aria-label="地点" value={location} onChange={e => setLocation(e.target.value)} className="glass-input mt-1" />
         </label>
-        <label className="w-28 text-sm">提醒(分钟)
-          <input type="number" min={0} aria-label="提醒" value={reminder} onChange={e => setReminder(Number(e.target.value))} className="w-full rounded-lg border p-2" />
+        <label className="w-28 text-xs font-medium text-[var(--text-secondary)]">提醒(分钟)
+          <input type="number" min={0} aria-label="提醒" value={reminder} onChange={e => setReminder(Number(e.target.value))} className="glass-input mt-1" />
         </label>
       </div>
-      <label className="text-sm">重复
-        <select aria-label="重复" value={repeat} onChange={e => setRepeat(e.target.value as RepeatRule)} className="rounded-lg border p-2">
+      <label className="block text-xs font-medium text-[var(--text-secondary)]">重复
+        <select aria-label="重复" value={repeat} onChange={e => setRepeat(e.target.value as RepeatRule)} className="glass-input mt-1">
           <option value="none">不重复</option>
           <option value="daily">每天</option>
           <option value="weekly">每周</option>
           <option value="monthly">每月</option>
         </select>
       </label>
-      {error && <p data-testid="form-error" className="text-sm text-red-600">{error}</p>}
+      {error && <p data-testid="form-error" className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
       {conflicts.length > 0 && (
-        <div data-testid="conflict-list" className="rounded-lg bg-amber-50 p-2 text-sm text-amber-800">
+        <div data-testid="conflict-list" className="rounded-2xl p-2.5 text-sm" style={{ background: 'var(--warn-bg)', color: 'var(--warn-fg)' }}>
           时间冲突：{conflicts.join('、')}。请调整时间后再保存。
         </div>
       )}
       <div className="flex gap-2">
-        <button type="submit" className="flex-1 rounded-lg bg-indigo-600 py-2 text-white">保存</button>
-        <button type="button" onClick={onCancel} className="flex-1 rounded-lg border py-2">取消</button>
+        <button type="submit" className="glass-btn glass-btn-primary flex-1">保存</button>
+        <button type="button" onClick={onCancel} className="glass-btn flex-1">取消</button>
       </div>
     </form>
   )

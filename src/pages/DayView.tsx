@@ -19,30 +19,36 @@ export default function DayView() {
   const [creating, setCreating] = useState(false)
 
   return (
-    <div className="p-4" data-testid="day-view">
-      <header className="mb-2 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{dayjs(date).format('YYYY年M月D日')}</h1>
+    <div className="p-4 md:mx-auto md:max-w-3xl md:p-6" data-testid="day-view">
+      <header className="mb-3 flex items-center justify-between pt-2 md:pt-0">
+        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{dayjs(date).format('YYYY年M月D日')}</h1>
         <div className="flex gap-2">
-          <button aria-label="周视图" onClick={() => navigate(`/week?date=${date}`)} className="rounded-lg border px-2 py-1 text-sm">周</button>
-          <button aria-label="新建" onClick={() => setCreating(true)} className="rounded-lg bg-indigo-600 px-3 py-1 text-white">+</button>
+          <button aria-label="周视图" onClick={() => navigate(`/week?date=${date}`)} className="glass-btn">周</button>
+          <button aria-label="新建" onClick={() => setCreating(true)} className="glass-btn glass-btn-primary h-9 w-9 rounded-full text-lg leading-none">+</button>
         </div>
       </header>
       {creating && (
-        <EventForm defaultStart={dayjs(`${date}T09:00:00`).format('YYYY-MM-DDTHH:mm')}
-          onSaved={() => { setCreating(false); void refresh() }} onCancel={() => setCreating(false)} />
+        <div className="glass mb-3 rounded-3xl">
+          <EventForm defaultStart={dayjs(`${date}T09:00:00`).format('YYYY-MM-DDTHH:mm')}
+            onSaved={() => { setCreating(false); void refresh() }} onCancel={() => setCreating(false)} />
+        </div>
       )}
       {editing !== null && (() => {
         const ev = events.find(e => e.id === editing)
         if (!ev) return null
-        return <EventForm initial={ev} onSaved={() => { setEditing(null); void refresh() }} onCancel={() => setEditing(null)} />
+        return (
+          <div className="glass mb-3 rounded-3xl">
+            <EventForm initial={ev} onSaved={() => { setEditing(null); void refresh() }} onCancel={() => setEditing(null)} />
+          </div>
+        )
       })()}
-      <div data-testid="timeline" className="space-y-0.5">
+      <div data-testid="timeline" className="space-y-1">
         {HOURS.map(h => {
           const hourKey = dayjs(`${date}T${String(h).padStart(2, '0')}:00:00`).format('YYYY-MM-DDTHH:mm:ss')
           const hourEvents = events.filter(e => !e.allDay && dayjs(e.startTime).hour() === h)
           return (
-            <div key={hourKey} className="flex gap-2 border-b py-1">
-              <span className="w-10 text-right text-xs text-gray-400">{String(h).padStart(2, '0')}:00</span>
+            <div key={hourKey} className="flex gap-2 border-b border-white/40 py-1 dark:border-white/10 md:gap-3">
+              <span className="w-10 pt-2 text-right text-xs tabular-nums text-[var(--text-tertiary)] md:w-14 md:text-sm">{String(h).padStart(2, '0')}:00</span>
               <div className="flex-1 space-y-1">
                 {hourEvents.map(ev => (
                   <EventItem key={ev.id} event={ev} onEdit={id => setEditing(id)} onToggle={toggle} />
@@ -56,7 +62,7 @@ export default function DayView() {
         ))}
       </div>
       {editing !== null && (
-        <button aria-label="删除" onClick={() => { void remove(editing); setEditing(null) }} className="mt-2 text-sm text-red-600">删除当前编辑</button>
+        <button aria-label="删除" onClick={() => { void remove(editing); setEditing(null) }} className="glass-btn glass-btn-danger mt-3 w-full">删除当前编辑</button>
       )}
     </div>
   )
