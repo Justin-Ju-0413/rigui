@@ -64,36 +64,40 @@ export default function SettingsView() {
   }
 
   return (
-    <div className="space-y-3 p-4" data-testid="settings-view">
-      <h1 className="text-lg font-semibold">设置</h1>
-      {hasConfig && <p className="text-sm text-green-600">已配置 LLM</p>}
-      <label className="block text-sm">API 地址
-        <input aria-label="API 地址" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://api.deepseek.com/v1" className="w-full rounded-lg border p-2" />
-      </label>
-      <label className="block text-sm">API Key
-        <input aria-label="API Key" type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full rounded-lg border p-2" />
-      </label>
-      <label className="block text-sm">模型
-        <input aria-label="模型" value={model} onChange={e => setModel(e.target.value)} placeholder="deepseek-chat" className="w-full rounded-lg border p-2" />
-      </label>
-      <div className="flex gap-2">
-        <button onClick={() => void handleSave()} className="flex-1 rounded-lg bg-indigo-600 py-2 text-white">保存</button>
-        <button onClick={() => void handleTest()} className="flex-1 rounded-lg border py-2">测试连接</button>
-      </div>
-      {status && <p data-testid="status" className="text-sm text-gray-600">{status}</p>}
-      <div className="space-y-2 border-t pt-3" data-testid="transfer-section">
-        <h2 className="text-sm font-semibold">导出 / 导入</h2>
+    <div className="space-y-3 p-4 md:mx-auto md:max-w-2xl md:p-6" data-testid="settings-view">
+      <h1 className="mb-1 pt-2 text-xl font-semibold tracking-tight md:pt-0 md:text-2xl">设置</h1>
+      <section className="glass space-y-3 rounded-3xl p-4">
+        {hasConfig && <p className="text-sm text-[var(--ok)]">已配置 LLM</p>}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-xs font-medium text-[var(--text-secondary)]">API 地址
+            <input aria-label="API 地址" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://api.deepseek.com/v1" className="glass-input mt-1" />
+          </label>
+          <label className="block text-xs font-medium text-[var(--text-secondary)]">API Key
+            <input aria-label="API Key" type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="glass-input mt-1" />
+          </label>
+        </div>
+        <label className="block text-xs font-medium text-[var(--text-secondary)]">模型
+          <input aria-label="模型" value={model} onChange={e => setModel(e.target.value)} placeholder="deepseek-chat" className="glass-input mt-1" />
+        </label>
         <div className="flex gap-2">
-          <button onClick={() => void handleExportIcs()} className="flex-1 rounded-lg border py-2">导出全部 ICS</button>
-          <button onClick={() => void handleExportIcs({ start: dayjs().startOf('month').format('YYYY-MM-DDTHH:mm:ss'), end: dayjs().endOf('month').format('YYYY-MM-DDTHH:mm:ss') })} className="flex-1 rounded-lg border py-2">导出本月 ICS</button>
-          <button onClick={() => void handleExportJson()} className="flex-1 rounded-lg border py-2">导出 JSON</button>
+          <button onClick={() => void handleSave()} className="glass-btn glass-btn-primary flex-1">保存</button>
+          <button onClick={() => void handleTest()} className="glass-btn flex-1">测试连接</button>
+        </div>
+        {status && <p data-testid="status" className="text-sm text-[var(--text-secondary)]">{status}</p>}
+      </section>
+      <section className="glass space-y-3 rounded-3xl p-4" data-testid="transfer-section">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)]">导出 / 导入</h2>
+        <div className="flex gap-2">
+          <button onClick={() => void handleExportIcs()} className="glass-btn flex-1 text-xs">导出全部 ICS</button>
+          <button onClick={() => void handleExportIcs({ start: dayjs().startOf('month').format('YYYY-MM-DDTHH:mm:ss'), end: dayjs().endOf('month').format('YYYY-MM-DDTHH:mm:ss') })} className="glass-btn flex-1 text-xs">导出本月 ICS</button>
+          <button onClick={() => void handleExportJson()} className="glass-btn flex-1 text-xs">导出 JSON</button>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => fileRef.current?.click()} className="flex-1 rounded-lg border py-2">导入 JSON</button>
+          <button onClick={() => fileRef.current?.click()} className="glass-btn flex-1">导入 JSON</button>
           <input type="file" accept="application/json" hidden ref={fileRef} onChange={e => e.target.files?.[0] && void handleImportJson(e.target.files[0])} />
         </div>
-        {importMsg && <p data-testid="transfer-msg" className="text-sm text-gray-600">{importMsg}</p>}
-      </div>
+        {importMsg && <p data-testid="transfer-msg" className="text-sm text-[var(--text-secondary)]">{importMsg}</p>}
+      </section>
     </div>
   )
 }

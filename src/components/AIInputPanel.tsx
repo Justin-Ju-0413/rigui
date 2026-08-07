@@ -76,19 +76,20 @@ export default function AIInputPanel() {
   return (
     <>
       <button aria-label="AI 输入" onClick={() => { setOpen(true); if (!config) setError('请先在设置页配置 LLM') }}
-        className="fixed bottom-20 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-2xl text-white shadow-lg">+AI</button>
+        className="glass-orb fixed bottom-28 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full text-xl font-semibold text-white">+AI</button>
       {open && (
-        <div data-testid="ai-panel" className="fixed inset-0 z-30 flex flex-col justify-end bg-black/30" onClick={() => setOpen(false)}>
-          <div className="rounded-t-2xl bg-white p-4" onClick={e => e.stopPropagation()}>
+        <div data-testid="ai-panel" className="fixed inset-0 z-30 flex flex-col justify-end bg-black/30 md:justify-center md:px-6" onClick={() => setOpen(false)}>
+          <div className="glass-strong rounded-t-[32px] p-4 pb-8 md:mx-auto md:max-w-lg md:rounded-[32px] md:pb-4" onClick={e => e.stopPropagation()}>
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/40" />
             <h2 className="mb-2 font-semibold">AI 日程输入</h2>
             <textarea aria-label="描述你的日程" value={text} onChange={e => setText(e.target.value)}
               placeholder="例如：下周二下午3点和老王开会，地点会议室A，提前10分钟提醒"
-              className="h-20 w-full rounded-lg border p-2" />
+              className="glass-input h-24 resize-none" />
             <button onClick={() => void handleParse()} disabled={loading}
-              className="mt-2 w-full rounded-lg bg-indigo-600 py-2 text-white disabled:opacity-50">
+              className="glass-btn glass-btn-primary mt-2 w-full">
               {loading ? '解析中…' : '解析'}
             </button>
-            {error && <p data-testid="parse-error" className="mt-2 text-sm text-red-600">{error}</p>}
+            {error && <p data-testid="parse-error" className="mt-2 text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
             {parsed && (
               <div className="mt-2">
                 <EventPreviewCard parsed={parsed} conflicts={conflicts} onConfirm={() => void handleConfirm()}

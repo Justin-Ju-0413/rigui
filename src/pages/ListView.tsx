@@ -22,12 +22,12 @@ export default function ListView() {
     [...list].sort((a, b) => (a.completed === b.completed ? dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf() : a.completed ? 1 : -1))
 
   return (
-    <div className="p-4" data-testid="list-view">
-      <h1 className="mb-2 text-lg font-semibold">列表</h1>
+    <div className="p-4 md:mx-auto md:max-w-3xl md:p-6" data-testid="list-view">
+      <h1 className="mb-3 pt-2 text-xl font-semibold tracking-tight md:pt-0 md:text-2xl">列表</h1>
       {(['today', 'tomorrow', 'week', 'later', 'past'] as GroupKey[]).map(key => (
         <section key={key} data-testid={`group-${key}`}>
-          <h2 className="mt-2 text-sm font-semibold text-gray-600">{GROUP_LABEL[key]}</h2>
-          <div className="space-y-1">
+          <h2 className="mb-1.5 mt-3 text-sm font-semibold text-[var(--text-secondary)] md:text-base">{GROUP_LABEL[key]}</h2>
+          <div className="space-y-1.5">
             {sortByStart(groups[key]).map(ev => (
               <EventItem key={ev.id} event={ev} onEdit={() => {}} onToggle={toggle} />
             ))}

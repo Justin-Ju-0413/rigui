@@ -9,12 +9,12 @@ const items = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-md">
+    <nav className="fixed inset-x-0 bottom-0 z-20 px-4 pb-5 md:bottom-auto md:top-4 md:px-6 md:pb-0">
+      <div className="glass mx-auto flex max-w-md rounded-[28px] p-1.5 md:max-w-xl">
         {items.map(({ to, label }) => (
           <NavLink key={to} to={to} end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 py-3 text-center text-sm ${isActive ? 'font-semibold text-indigo-600' : 'text-gray-500'}`}>
+              `flex-1 rounded-3xl py-2.5 text-center text-sm transition-colors ${isActive ? 'nav-active font-semibold' : 'text-[var(--text-secondary)]'}`}>
             {label}
           </NavLink>
         ))}
