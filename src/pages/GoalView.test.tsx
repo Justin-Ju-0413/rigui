@@ -4,7 +4,7 @@ import { describe, expect, it, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import GoalView from './GoalView'
 import { db } from '../db/schema'
-import { addGoal } from '../db/crud'
+import { addGoal, getAllEvents } from '../db/crud'
 
 describe('GoalView', () => {
   beforeEach(async () => {
@@ -51,5 +51,33 @@ describe('GoalView', () => {
     await user.click(screen.getByRole('button', { name: '取消' }))
     await waitFor(() => expect(screen.queryByTestId('goal-delete-confirm')).not.toBeInTheDocument())
     expect(screen.getByText('学英语')).toBeInTheDocument()
+  })
+
+  it('排期一周 → 预览出现任务槽（条数与频次一致）→ 全部确认后入库并消失', async () => {
+    const user = userEvent.setup()
+    await addGoal({ name: '学英语', startDate: '2026-08-10', weeklyFrequency: 2, durationMinutes: 60 })
+    render(<MemoryRouter><GoalView /></MemoryRouter>)
+    await screen.findByText('学英语')
+    await user.click(screen.getAllByTestId('goal-schedule-btn')[0])
+    await waitFor(() => expect(screen.getByTestId('schedule-preview')).toBeInTheDocument())
+    expect(screen.getAllByTestId('schedule-item')).toHaveLength(2)
+    expect(screen.getByTestId('schedule-success')).toHaveTextContent(/已排 2\/2 次/)
+    await user.click(screen.getByRole('button', { name: '全部确认' }))
+    await waitFor(() => expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument())
+    const events = await getAllEvents()
+    expect(events).toHaveLength(2)
+    expect(events.every(e => e.relatedGoalId !== undefined)).toBe(true)
+  })
+
+  it('放弃重新排丢弃预览且不入库', async () => {
+    const user = userEvent.setup()
+    await addGoal({ name: '学英语', startDate: '2026-08-10', weeklyFrequency: 2, durationMinutes: 60 })
+    render(<MemoryRouter><GoalView /></MemoryRouter>)
+    await screen.findByText('学英语')
+    await user.click(screen.getAllByTestId('goal-schedule-btn')[0])
+    await waitFor(() => expect(screen.getByTestId('schedule-preview')).toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: '放弃' }))
+    await waitFor(() => expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument())
+    expect(await getAllEvents()).toHaveLength(0)
   })
 })
