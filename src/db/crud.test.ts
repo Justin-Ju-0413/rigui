@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { addEvent, getEventsByRange, getAllEvents, updateEvent, deleteEvent, toggleEventCompleted } from './crud'
+import { addEvent, getEventsByRange, getAllEvents, updateEvent, deleteEvent, toggleEventCompleted, addGoal, updateGoal, getAllGoals, getEventsByGoal, deleteGoalCascade } from './crud'
 import { getSetting, setSetting } from './settings'
 import { db } from './schema'
-import type { CalendarEvent } from './types'
+import type { CalendarEvent, Goal } from './types'
 
 const base = (): Omit<CalendarEvent, 'id' | 'createdAt' | 'completed'> => ({
   title: '开会',
@@ -60,5 +60,61 @@ describe('crud', () => {
     expect(await getSetting('llm_model')).toBeUndefined()
     await setSetting('llm_model', 'deepseek-chat')
     expect(await getSetting('llm_model')).toBe('deepseek-chat')
+  })
+})
+
+describe('goal CRUD', () => {
+  beforeEach(async () => {
+    await db.delete()
+    await db.open()
+  })
+
+  const goalInput = (): Omit<Goal, 'id' | 'createdAt'> => ({
+    name: '学英语',
+    startDate: '2026-08-10',
+    weeklyFrequency: 2,
+    durationMinutes: 60,
+  })
+
+  it('addGoal 写入并可全量读取，durationMinutes 默认缺省 60', async () => {
+    const id = await addGoal(goalInput())
+    const goals = await getAllGoals()
+    expect(goals).toHaveLength(1)
+    expect(goals[0].durationMinutes).toBe(60)
+    expect(goals[0].id).toBe(id)
+  })
+
+  it('updateGoal 局部更新', async () => {
+    const id = await addGoal(goalInput())
+    await updateGoal(id, { weeklyFrequency: 3 })
+    const [g] = await getAllGoals()
+    expect(g.weeklyFrequency).toBe(3)
+    expect(g.name).toBe('学英语')
+  })
+
+  it('getEventsByGoal 返回该目标关联事件', async () => {
+    const gid = await addGoal(goalInput())
+    await addEvent({ ...base(), title: '学英语 · 第 1 次', relatedGoalId: gid })
+    await addEvent({ ...base(), title: '开会' })
+    const evs = await getEventsByGoal(gid)
+    expect(evs).toHaveLength(1)
+    expect(evs[0].title).toBe('学英语 · 第 1 次')
+  })
+
+  it('deleteGoalCascade 删除目标并级联删除关联事件、保留无关事件', async () => {
+    const gid = await addGoal(goalInput())
+    await addEvent({ ...base(), title: '学英语 · 第 1 次', relatedGoalId: gid })
+    const otherId = await addEvent({ ...base(), title: '开会' })
+    const deleted = await deleteGoalCascade(gid)
+    expect(deleted).toBe(1)
+    expect(await getAllGoals()).toHaveLength(0)
+    const remaining = await getAllEvents()
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].id).toBe(otherId)
+  })
+
+  it('addGoal 接受 endDate 可选', async () => {
+    await addGoal({ ...goalInput(), endDate: '2026-08-31' })
+    expect((await getAllGoals())[0].endDate).toBe('2026-08-31')
   })
 })
