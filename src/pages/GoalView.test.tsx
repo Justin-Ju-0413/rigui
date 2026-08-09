@@ -80,4 +80,18 @@ describe('GoalView', () => {
     await waitFor(() => expect(screen.queryByTestId('schedule-preview')).not.toBeInTheDocument())
     expect(await getAllEvents()).toHaveLength(0)
   })
+
+  it('编辑目标：回填并可修改后保存', async () => {
+    const user = userEvent.setup()
+    await addGoal({ name: '学英语', startDate: '2026-08-10', weeklyFrequency: 2, durationMinutes: 60 })
+    render(<MemoryRouter><GoalView /></MemoryRouter>)
+    await screen.findByText('学英语')
+    await user.click(screen.getByRole('button', { name: '编辑' }))
+    const input = screen.getByLabelText('目标名称')
+    expect(input).toHaveValue('学英语')
+    await user.clear(input)
+    await user.type(input, '学英语（进阶）')
+    await user.click(screen.getByRole('button', { name: '保存' }))
+    await screen.findByText('学英语（进阶）')
+  })
 })
