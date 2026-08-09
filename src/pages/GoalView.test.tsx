@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, beforeEach } from 'vitest'
+import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import GoalView from './GoalView'
 import { db } from '../db/schema'
 import { addGoal, getAllEvents } from '../db/crud'
+import * as crud from '../db/crud'
 
 describe('GoalView', () => {
   beforeEach(async () => {
@@ -93,5 +94,31 @@ describe('GoalView', () => {
     await user.type(input, '学英语（进阶）')
     await user.click(screen.getByRole('button', { name: '保存' }))
     await screen.findByText('学英语（进阶）')
+  })
+
+  it('排期一周 → 全部确认中途失败（addEvent 抛错）→ 显示错误并保留未入库槽', async () => {
+    const user = userEvent.setup()
+    const originalAdd = crud.addEvent
+    let calls = 0
+    const spy = vi.spyOn(crud, 'addEvent').mockImplementation(async (input) => {
+      calls++
+      if (calls === 2) throw new Error('indexeddb boom')
+      return originalAdd(input)
+    })
+    try {
+      await addGoal({ name: '学英语', startDate: '2026-08-10', weeklyFrequency: 2, durationMinutes: 60 })
+      render(<MemoryRouter><GoalView /></MemoryRouter>)
+      await screen.findByText('学英语')
+      await user.click(screen.getAllByTestId('goal-schedule-btn')[0])
+      await waitFor(() => expect(screen.getByTestId('schedule-preview')).toBeInTheDocument())
+      expect(screen.getAllByTestId('schedule-item')).toHaveLength(2)
+      await user.click(screen.getByRole('button', { name: '全部确认' }))
+      await waitFor(() => expect(screen.getByTestId('schedule-confirm-error')).toBeInTheDocument())
+      expect(screen.getByTestId('schedule-confirm-error')).toHaveTextContent(/剩余 1 条/)
+      expect(screen.getAllByTestId('schedule-item')).toHaveLength(1)
+      expect(await getAllEvents()).toHaveLength(1)
+    } finally {
+      spy.mockRestore()
+    }
   })
 })

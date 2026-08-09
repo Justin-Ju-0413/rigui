@@ -16,6 +16,8 @@ export default function GoalView() {
   const [previewGoalId, setPreviewGoalId] = useState<number | null>(null)
   const [previewSlots, setPreviewSlots] = useState<ScheduledSlot[]>([])
   const [scheduleError, setScheduleError] = useState('')
+  const [confirmError, setConfirmError] = useState('')
+  const [committing, setCommitting] = useState(false)
 
   const startDelete = async (goal: Goal) => {
     const count = events.filter(e => e.relatedGoalId === goal.id).length
@@ -42,22 +44,39 @@ export default function GoalView() {
   }
 
   const confirmSchedule = async () => {
-    if (previewGoalId === null) return
-    for (const s of previewSlots) {
-      await addEvent({
-        title: s.title,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        allDay: false,
-        reminderOffsets: [],
-        repeat: 'none',
-        relatedGoalId: previewGoalId,
-      })
+    if (previewGoalId === null || committing) return
+    setCommitting(true)
+    setConfirmError('')
+    let inserted = 0
+    try {
+      for (const s of previewSlots) {
+        await addEvent({
+          title: s.title,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          allDay: false,
+          reminderOffsets: [],
+          repeat: 'none',
+          relatedGoalId: previewGoalId,
+        })
+        inserted++
+      }
+      setPreviewGoalId(null)
+      setPreviewSlots([])
+      notifyEventsChanged()
+      void refresh()
+    } catch {
+      const remaining = previewSlots.length - inserted
+      if (remaining <= 0) {
+        setPreviewGoalId(null)
+        setPreviewSlots([])
+      } else {
+        setPreviewSlots(previewSlots.slice(inserted))
+      }
+      setConfirmError(`入库失败：已成功 ${inserted} 条，剩余 ${Math.max(remaining, 0)} 条未入库，可重试。`)
+    } finally {
+      setCommitting(false)
     }
-    setPreviewGoalId(null)
-    setPreviewSlots([])
-    notifyEventsChanged()
-    void refresh()
   }
 
   const WEEKDAYS = '日一二三四五六'
@@ -141,9 +160,11 @@ export default function GoalView() {
                 </li>
               ))}
             </ul>
+            {confirmError && <p data-testid="schedule-confirm-error" className="text-sm" style={{ color: 'var(--danger)' }}>{confirmError}</p>}
             <div className="mt-3 flex gap-2">
-              <button onClick={() => { void confirmSchedule() }} className="glass-btn glass-btn-primary flex-1">全部确认</button>
-              <button onClick={() => setPreviewGoalId(null)} className="glass-btn flex-1">放弃</button>
+              <button onClick={() => { void confirmSchedule() }} disabled={committing}
+                className="glass-btn glass-btn-primary flex-1">全部确认</button>
+              <button onClick={() => setPreviewGoalId(null)} disabled={committing} className="glass-btn flex-1">放弃</button>
             </div>
           </div>
         )}
