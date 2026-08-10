@@ -9,9 +9,9 @@ async function clearDb(page: import('@playwright/test').Page) {
 test('底部导航在四个视图间切换', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('month-view')).toBeVisible()
-  await page.getByText('列表').click()
+  await page.locator('nav.fixed').getByText('列表').click()
   await expect(page.getByTestId('list-view')).toBeVisible()
-  await page.getByText('设置').click()
+  await page.locator('nav.fixed').getByText('设置').click()
   await expect(page.getByTestId('settings-view')).toBeVisible()
 })
 
