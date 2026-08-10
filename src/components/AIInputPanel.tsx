@@ -12,7 +12,6 @@ import dayjs from 'dayjs'
 export default function AIInputPanel() {
   const { config } = useLLMConfig()
   const { save } = useEvents()
-  const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -61,7 +60,6 @@ export default function AIInputPanel() {
       repeat: parsed.repeat ?? 'none',
     })
     notifyEventsChanged()
-    setOpen(false)
     setParsed(null)
     setText('')
   }
@@ -74,31 +72,31 @@ export default function AIInputPanel() {
   }
 
   return (
-    <>
-      <button aria-label="AI 输入" onClick={() => { setOpen(true); if (!config) setError('请先在设置页配置 LLM') }}
-        className="glass-orb fixed bottom-28 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full text-xl font-semibold text-white">+AI</button>
-      {open && (
-        <div data-testid="ai-panel" className="fixed inset-0 z-30 flex flex-col justify-end bg-black/30 md:justify-center md:px-6" onClick={() => setOpen(false)}>
-          <div className="glass-strong rounded-t-[32px] p-4 pb-8 md:mx-auto md:max-w-lg md:rounded-[32px] md:pb-4" onClick={e => e.stopPropagation()}>
-            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/40" />
-            <h2 className="mb-2 font-semibold">AI 日程输入</h2>
-            <textarea aria-label="描述你的日程" value={text} onChange={e => setText(e.target.value)}
-              placeholder="例如：下周二下午3点和老王开会，地点会议室A，提前10分钟提醒"
-              className="glass-input h-24 resize-none" />
-            <button onClick={() => void handleParse()} disabled={loading}
-              className="glass-btn glass-btn-primary mt-2 w-full">
-              {loading ? '解析中…' : '解析'}
-            </button>
-            {error && <p data-testid="parse-error" className="mt-2 text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
-            {parsed && (
-              <div className="mt-2">
-                <EventPreviewCard parsed={parsed} conflicts={conflicts} onConfirm={() => void handleConfirm()}
-                  onEdit={handleEdit} onCancel={() => setParsed(null)} />
-              </div>
-            )}
+    <div className="sticky bottom-0 z-20 border-t border-[var(--border)] bg-[var(--bg)]/95 px-4 pb-24 pt-3 backdrop-blur md:py-3">
+      <div className="mx-auto max-w-3xl">
+        {error && <p data-testid="parse-error" className="mb-2 text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
+        {parsed && (
+          <div className="mb-2">
+            <EventPreviewCard parsed={parsed} conflicts={conflicts} onConfirm={() => void handleConfirm()}
+              onEdit={handleEdit} onCancel={() => setParsed(null)} />
           </div>
+        )}
+        <div className="flex items-end gap-2">
+          <textarea aria-label="描述你的日程" value={text} onChange={e => setText(e.target.value)}
+            placeholder="输入日程描述，用自然语言排期…（例如：下周二下午3点和老王开会）"
+            rows={1}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleParse() }
+            }}
+            data-testid="ai-input"
+            className="input min-h-11 max-h-40 flex-1 resize-none py-3" />
+          <button onClick={() => void handleParse()} disabled={loading || !text.trim()}
+            data-testid="ai-send"
+            className="btn btn-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none">
+            {loading ? '…' : '→'}
+          </button>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   )
 }
