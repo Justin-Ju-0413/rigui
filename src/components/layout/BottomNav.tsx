@@ -9,7 +9,7 @@ const items = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 px-4 pb-5 md:bottom-auto md:top-4 md:px-6 md:pb-0">
+    <nav className="fixed inset-x-0 bottom-0 z-20 px-4 pb-5 md:hidden">
       <div className="glass mx-auto flex max-w-md rounded-[28px] p-1.5 md:max-w-xl">
         {items.map(({ to, label }) => (
           <NavLink key={to} to={to} end={to === '/'}
