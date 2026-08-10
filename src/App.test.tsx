@@ -4,11 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
 describe('App shell', () => {
-  it('渲染底部导航四项', () => {
+  it('渲染侧边栏与底部导航各四项', () => {
     render(<MemoryRouter><App /></MemoryRouter>)
-    expect(screen.getByRole('navigation')).toBeInTheDocument()
+    expect(screen.getAllByRole('navigation')).toHaveLength(2)
     for (const label of ['日程', '目标', '列表', '设置']) {
-      expect(screen.getByText(label)).toBeInTheDocument()
+      expect(screen.getAllByText(label)).toHaveLength(2)
     }
   })
 
@@ -20,7 +20,7 @@ describe('App shell', () => {
   it('点击设置导航到设置页', async () => {
     const user = (await import('@testing-library/user-event')).default
     render(<MemoryRouter><App /></MemoryRouter>)
-    await user.click(screen.getByText('设置'))
+    await user.click(screen.getAllByRole('link', { name: '设置' })[0])
     expect(screen.getByTestId('settings-view')).toBeInTheDocument()
   })
 })
