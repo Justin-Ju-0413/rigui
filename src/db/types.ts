@@ -10,7 +10,7 @@ export interface CalendarEvent {
   reminderOffsets: number[]
   repeat: RepeatRule
   completed: boolean
-  relatedGoalId?: string
+  relatedGoalId?: number
   createdAt: string
 }
 
@@ -20,6 +20,7 @@ export interface Goal {
   startDate: string
   endDate?: string
   weeklyFrequency?: number
+  durationMinutes?: number
   createdAt: string
 }
 

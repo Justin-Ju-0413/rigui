@@ -1,0 +1,46 @@
+import { expect, test } from '@playwright/test'
+
+async function clearDb(page: import('@playwright/test').Page) {
+  await page.goto('/')
+  await page.evaluate(() => indexedDB.deleteDatabase('rigui'))
+  await page.reload()
+}
+
+test('目标排期全流程：新建 → 排期一周 → 预览确认 → 月视图可见任务', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-08-10T08:00:00') })
+  await clearDb(page)
+  await page.goto('/goals')
+  await page.getByRole('button', { name: '新建目标' }).click()
+  await page.getByLabel('目标名称').fill('学英语')
+  await page.getByLabel('每周次数').fill('2')
+  await page.getByLabel('单次时长').fill('60')
+  await page.getByRole('button', { name: '保存' }).click()
+  await expect(page.getByText('学英语')).toBeVisible()
+  await page.getByRole('button', { name: '排期一周' }).click()
+  await expect(page.getByTestId('schedule-preview')).toBeVisible()
+  await expect(page.getByTestId('schedule-item')).toHaveCount(2)
+  await expect(page.getByText(/已排 2\/2 次/)).toBeVisible()
+  await page.getByRole('button', { name: '全部确认' }).click()
+  await expect(page.getByTestId('schedule-preview')).toBeHidden()
+  await page.goto('/')
+  await expect(page.getByTestId('month-cell-2026-08-10')).toContainText('学英语 · 第 1 次')
+  await expect(page.getByTestId('month-cell-2026-08-11')).toContainText('学英语 · 第 2 次')
+})
+
+test('目标删除级联：删除目标后任务不留在月视图', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-08-10T08:00:00') })
+  await clearDb(page)
+  await page.goto('/goals')
+  await page.getByRole('button', { name: '新建目标' }).click()
+  await page.getByLabel('目标名称').fill('健身')
+  await page.getByRole('button', { name: '保存' }).click()
+  await page.getByRole('button', { name: '排期一周' }).click()
+  await expect(page.getByTestId('schedule-item')).toHaveCount(1)
+  await page.getByRole('button', { name: '全部确认' }).click()
+  await page.getByRole('button', { name: '删除' }).click()
+  await expect(page.getByTestId('goal-delete-confirm')).toBeVisible()
+  await page.getByRole('button', { name: '确认删除' }).click()
+  await expect(page.getByText('健身')).toBeHidden()
+  await page.goto('/')
+  await expect(page.getByTestId('month-cell-2026-08-10')).not.toContainText('健身')
+})

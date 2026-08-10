@@ -13,6 +13,7 @@ export class RiguiDB extends Dexie {
       goals: '++id',
       settings: 'key',
     })
+    this.version(2).stores({ goals: '++id' })
   }
 }
 
