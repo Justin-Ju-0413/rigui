@@ -86,12 +86,14 @@ export default function AIInputPanel() {
             placeholder="输入日程描述，用自然语言排期…（例如：下周二下午3点和老王开会）"
             rows={1}
             onKeyDown={e => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleParse() }
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && !loading) {
+                e.preventDefault(); void handleParse()
+              }
             }}
             data-testid="ai-input"
             className="input min-h-11 max-h-40 flex-1 resize-none py-3" />
           <button onClick={() => void handleParse()} disabled={loading || !text.trim()}
-            data-testid="ai-send"
+            aria-label="发送" data-testid="ai-send"
             className="btn btn-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg leading-none">
             {loading ? '…' : '→'}
           </button>
