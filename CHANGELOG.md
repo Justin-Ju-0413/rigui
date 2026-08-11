@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.0] - 2026-08-11
+
+### Changed
+- Claude 风格视觉改造：暖色中性设计令牌（card/btn/input 组件类），桌面端侧边栏 + 双栏布局，移动端底部胶囊导航
+- AI 输入框改为底部常驻（Claude 式），发送按钮 aria-label；中文 IME 组合输入时 Enter 不再误触发
+- 日视图新增「当前时间」指示线（当日该小时高亮）
+
+### Fixed
+- E2E：Playwright `isMobile` 模拟下点击坐标与元素命中检测不一致导致按钮误判被拦截，改用 Pixel 7 视口（不带 isMobile）
+
 ## [1.0.0] - 2026-08-06
 
 ### Added
