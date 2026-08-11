@@ -87,11 +87,11 @@ export default function GoalView() {
       <header className="mb-3 flex items-center justify-between pt-2 md:pt-0">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">目标</h1>
         <button aria-label="新建目标" onClick={() => { setEditing(null); setFormVisible(true) }} data-testid="goal-new-btn"
-          className="glass-btn glass-btn-primary">+ 新建目标</button>
+          className="btn btn-primary">+ 新建目标</button>
       </header>
 
       {formVisible && (
-        <div className="glass mb-3 rounded-3xl">
+        <div className="card mb-3 rounded-lg">
           <GoalForm initial={editing ?? undefined}
             onSaved={() => { setFormVisible(false); void refresh() }}
             onCancel={() => setFormVisible(false)} />
@@ -102,12 +102,12 @@ export default function GoalView() {
         const goal = goals.find(g => g.id === confirmDeleteId)
         if (!goal) return null
         return (
-          <div data-testid="goal-delete-confirm" className="glass mb-3 rounded-3xl p-4 text-sm">
+          <div data-testid="goal-delete-confirm" className="card mb-3 rounded-lg p-4 text-sm">
             <p className="font-medium">{deleteInfo}，确认删除「{goal.name}」？</p>
             <p className="mt-1 text-xs text-[var(--text-tertiary)]">此操作不可撤销。</p>
             <div className="mt-3 flex gap-2">
-              <button onClick={() => { void confirmDelete() }} className="glass-btn glass-btn-danger flex-1">确认删除</button>
-              <button onClick={() => setConfirmDeleteId(null)} className="glass-btn flex-1">取消</button>
+              <button onClick={() => { void confirmDelete() }} className="btn btn-danger flex-1">确认删除</button>
+              <button onClick={() => setConfirmDeleteId(null)} className="btn flex-1">取消</button>
             </div>
           </div>
         )
@@ -122,7 +122,7 @@ export default function GoalView() {
             e.relatedGoalId === goal.id && dayjs(e.startTime).isAfter(weekStart) && dayjs(e.startTime).isBefore(weekEnd)
           ).length
           return (
-            <section key={goal.id} data-testid={`goal-card-${goal.id}`} className="glass rounded-3xl p-4">
+            <section key={goal.id} data-testid={`goal-card-${goal.id}`} className="card rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-base font-semibold">{goal.name}</h2>
@@ -133,28 +133,28 @@ export default function GoalView() {
                   </p>
                   {goal.endDate && <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">截止 {dayjs(goal.endDate).format('YYYY-MM-DD')}</p>}
                 </div>
-                <button aria-label="编辑" onClick={() => { setEditing(goal); setFormVisible(true) }} className="glass-btn text-xs">编辑</button>
+                <button aria-label="编辑" onClick={() => { setEditing(goal); setFormVisible(true) }} className="btn text-xs">编辑</button>
               </div>
               <p className="mt-2 text-xs" data-testid="goal-week-progress">
                 本周 <span className="font-semibold text-[var(--accent)]">{weekCount}</span>/{freq} 已排
               </p>
               <div className="mt-3 flex gap-2">
                 <button onClick={() => { void planWeek(goal) }} disabled={previewGoalId !== null}
-                  data-testid="goal-schedule-btn" className="glass-btn glass-btn-primary flex-1">排期一周</button>
-                <button aria-label="删除" onClick={() => { setFormVisible(false); void startDelete(goal) }} className="glass-btn flex-1">删除</button>
+                  data-testid="goal-schedule-btn" className="btn btn-primary flex-1">排期一周</button>
+                <button aria-label="删除" onClick={() => { setFormVisible(false); void startDelete(goal) }} className="btn flex-1">删除</button>
               </div>
             </section>
           )
         })}
         {previewGoalId !== null && previewSlots.length > 0 && (
-          <div data-testid="schedule-preview" className="glass-strong rounded-3xl p-4">
+          <div data-testid="schedule-preview" className="card rounded-lg p-4">
             <h3 className="text-sm font-semibold text-[var(--accent)]">
               <span data-testid="schedule-success">已排 {previewSlots.length}/{goals.find(g => g.id === previewGoalId)?.weeklyFrequency ?? 1} 次</span>
             </h3>
             <ul className="mt-2 space-y-1.5">
               {previewSlots.map(s => (
                 <li key={s.startTime} data-testid="schedule-item"
-                  className="flex items-center justify-between rounded-2xl bg-white/40 px-3 py-2 text-sm dark:bg-white/5">
+                  className="flex items-center justify-between rounded-lg bg-[var(--bg-sidebar)] px-3 py-2 text-sm">
                   <span>{fmt(s.startTime)} {s.title}</span>
                   <span className="text-xs text-[var(--text-tertiary)]">{dayjs(s.endTime).diff(s.startTime, 'minute')} 分钟</span>
                 </li>
@@ -163,18 +163,18 @@ export default function GoalView() {
             {confirmError && <p data-testid="schedule-confirm-error" className="text-sm" style={{ color: 'var(--danger)' }}>{confirmError}</p>}
             <div className="mt-3 flex gap-2">
               <button onClick={() => { void confirmSchedule() }} disabled={committing}
-                className="glass-btn glass-btn-primary flex-1">全部确认</button>
-              <button onClick={() => setPreviewGoalId(null)} disabled={committing} className="glass-btn flex-1">放弃</button>
+                className="btn btn-primary flex-1">全部确认</button>
+              <button onClick={() => setPreviewGoalId(null)} disabled={committing} className="btn flex-1">放弃</button>
             </div>
           </div>
         )}
         {previewGoalId !== null && previewSlots.length === 0 && (
-          <div data-testid="schedule-empty" className="glass rounded-3xl p-4 text-sm text-[var(--text-secondary)]">
+          <div data-testid="schedule-empty" className="card rounded-lg p-4 text-sm text-[var(--text-secondary)]">
             <span data-testid="schedule-error">{scheduleError || '本周无空档'}</span>
           </div>
         )}
         {goals.length === 0 && !formVisible && (
-          <div className="glass rounded-3xl p-6 text-center text-sm text-[var(--text-secondary)]">
+          <div className="card rounded-lg p-6 text-center text-sm text-[var(--text-secondary)]">
             还没有目标。点击「新建目标」添加一个，然后点「排期一周」自动安排到空闲时段。
           </div>
         )}

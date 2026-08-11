@@ -11,19 +11,19 @@ interface Props {
 
 export default function EventPreviewCard({ parsed, conflicts, onConfirm, onEdit, onCancel }: Props) {
   return (
-    <div data-testid="preview-card" className="glass-strong space-y-2.5 rounded-3xl p-3.5">
+    <div data-testid="preview-card" className="card space-y-2.5 rounded-lg p-3.5">
       <h3 className="text-sm font-semibold text-[var(--accent)]">预览</h3>
       <div className="space-y-2">
         <input aria-label="编辑标题" value={parsed.title} onChange={e => onEdit({ title: e.target.value })}
-          className="glass-input" />
+          className="input" />
         <div className="flex gap-2">
           <label className="flex-1 text-xs text-[var(--text-secondary)]">开始
             <input type="datetime-local" aria-label="编辑开始时间" value={dayjs(parsed.startTime).format('YYYY-MM-DDTHH:mm')}
-              onChange={e => onEdit({ startTime: e.target.value })} className="glass-input mt-1" />
+              onChange={e => onEdit({ startTime: e.target.value })} className="input mt-1" />
           </label>
           <label className="flex-1 text-xs text-[var(--text-secondary)]">结束
             <input type="datetime-local" aria-label="编辑结束时间" value={parsed.endTime ? dayjs(parsed.endTime).format('YYYY-MM-DDTHH:mm') : ''}
-              onChange={e => onEdit({ endTime: e.target.value })} className="glass-input mt-1" />
+              onChange={e => onEdit({ endTime: e.target.value })} className="input mt-1" />
           </label>
         </div>
       </div>
@@ -36,11 +36,11 @@ export default function EventPreviewCard({ parsed, conflicts, onConfirm, onEdit,
         <p className="text-xs text-[var(--text-tertiary)]">提醒：提前 {parsed.reminderOffsets.join('/')} 分钟</p>
       )}
       {conflicts.length > 0 && (
-        <div data-testid="preview-conflicts" className="rounded-2xl p-2 text-xs" style={{ background: 'var(--warn-bg)', color: 'var(--warn-fg)' }}>时间冲突：{conflicts.join('、')}</div>
+        <div data-testid="preview-conflicts" className="rounded-lg p-2 text-xs" style={{ background: 'var(--warn-bg)', color: 'var(--warn-fg)' }}>时间冲突：{conflicts.join('、')}</div>
       )}
       <div className="flex gap-2">
-        <button onClick={onConfirm} className="glass-btn glass-btn-primary flex-1">确认创建</button>
-        <button onClick={onCancel} className="glass-btn flex-1">取消</button>
+        <button onClick={onConfirm} className="btn btn-primary flex-1">确认创建</button>
+        <button onClick={onCancel} className="btn flex-1">取消</button>
       </div>
     </div>
   )
