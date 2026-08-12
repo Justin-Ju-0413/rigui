@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { __setLLMTransport } from '../llm/client'
 import type { LLMConfig } from '../llm/types'
 import type { ReportStats } from '../stats/report'

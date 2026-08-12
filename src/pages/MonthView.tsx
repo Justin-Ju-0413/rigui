@@ -3,6 +3,7 @@ import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import { buildMonthGrid } from '../utils/calendar'
 import { useEvents } from '../hooks/useEvents'
+import WeeklyReportCard from '../components/WeeklyReportCard'
 
 interface MonthViewProps {
   initialAnchor?: string
@@ -33,6 +34,7 @@ export default function MonthView({ initialAnchor }: MonthViewProps = {}) {
         <button aria-label="下个月" onClick={() => setAnchor(dayjs(anchor).add(1, 'month').format('YYYY-MM-DDTHH:mm:ss'))}
           className="btn flex h-9 w-9 items-center justify-center rounded-full">›</button>
       </header>
+      <WeeklyReportCard />
       <div className="mb-1.5 grid grid-cols-7 text-center text-xs font-medium text-[var(--text-tertiary)] md:text-sm">
         {['一', '二', '三', '四', '五', '六', '日'].map(d => <div key={d}>{d}</div>)}
       </div>
