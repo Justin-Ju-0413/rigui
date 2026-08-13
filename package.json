@@ -1,7 +1,7 @@
 {
   "name": "rigui",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.4.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "npm run build -- --mode test && playwright test",
+    "perf": "npm run build -- --mode test && playwright test --config=perf.config.ts"
   },
   "build": {
     "appId": "com.rigui.app",

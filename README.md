@@ -9,6 +9,7 @@
 - Web 通知提醒（前台调度约 30s 触发；Service Worker 处理通知点击）
 - ICS 导出（兼容 Apple/Google 日历）、JSON 备份导入导出
 - 桌面应用（Electron）：独立窗口、系统通知、保存对话框，`npm run build:app` 打包 .app/.dmg
+- 液态玻璃 UI：暖色极光墙纸 + 玻璃面板 + 弹性动效（分层性能预算，内容卡片零 blur 开销）
 
 ## 快速开始
 
@@ -42,6 +43,7 @@ Vite / React 19 / TypeScript / Tailwind 4 / Dexie(IndexedDB) / vite-plugin-pwa /
 ```bash
 npm test          # 单元测试
 npm run test:e2e  # E2E（mock LLM）
+npm run perf      # 性能基准（blur 层预算 / FPS / longtask）
 npm run lint && npm run build
 ```
 
