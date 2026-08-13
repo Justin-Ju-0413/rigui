@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // 相对路径：Electron 以 file:// 加载 dist 时需要；浏览器部署于子路径也兼容
+  base: './',
   plugins: [
     react(),
     tailwindcss(),

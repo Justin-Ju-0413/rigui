@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0] - 2026-08-13
+
+### Added
+- Electron 桌面应用：独立窗口（单实例）、系统通知（点击聚焦窗口，替代浏览器 SW 通知）、ICS/JSON 导出弹系统保存对话框
+- `npm run dev:app`（vite 热更新 + Electron）、`npm run build:app`（electron-builder 打包 .app/.dmg，产物 release/）
+- 应用图标（build/icon.png，由 favicon.svg 渲染）；e2e Electron 冒烟测试
+
+### Changed
+- 路由 BrowserRouter → HashRouter、vite base './'（file:// 加载兼容，浏览器 PWA 不受影响）
+- 通知/权限/SW 注册按环境分流：Electron 下走主进程系统通知，浏览器行为不变
+
 ## [1.2.0] - 2026-08-12
 
 ### Added

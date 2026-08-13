@@ -26,6 +26,11 @@ export function parseImportJson(raw: string): { ok: true; events: ExportEvent[] 
 }
 
 export function downloadFile(filename: string, content: string, mime: string): void {
+  // Electron：弹系统保存对话框（签名保持同步，fire-and-forget 即可）
+  if (window.rigui?.isElectron) {
+    void window.rigui.saveFile(filename, content)
+    return
+  }
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

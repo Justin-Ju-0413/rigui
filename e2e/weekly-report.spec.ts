@@ -12,6 +12,8 @@ async function seedConfig(page: import('@playwright/test').Page) {
   await page.getByLabel('API Key').fill('sk-test')
   await page.getByLabel('模型').fill('test-model')
   await page.getByRole('button', { name: '保存' }).click()
+  // 等待写入落库（async 保存，直接导航会丢写）
+  await expect(page.getByTestId('status')).toContainText('已保存')
 }
 
 test('周报卡片：统计渲染 + 完成率 + AI 分析全流程', async ({ page }) => {
@@ -27,7 +29,10 @@ test('周报卡片：统计渲染 + 完成率 + AI 分析全流程', async ({ pa
     await page.getByLabel('开始时间').fill(start)
     await page.getByRole('button', { name: '保存' }).click()
   }
-  await page.locator('[data-testid^="event-item-"]').filter({ hasText: '周会' }).getByLabel('完成').click()
+  // 勾选完成：等待写入落库再导航（click 后立即 goto 会中断未完成的 IndexedDB 事务）
+  const weeklyItem = page.locator('[data-testid^="event-item-"]').filter({ hasText: '周会' })
+  await weeklyItem.getByLabel('完成').click()
+  await expect(weeklyItem.getByLabel('完成')).toBeChecked()
 
   // 月视图：简报卡统计
   await page.goto('/')
