@@ -19,6 +19,7 @@ export default function WeeklyReportCard() {
   const { config } = useLLMConfig()
   const [anchor, setAnchor] = useState(() => dayjs())
   const [aiText, setAiText] = useState('')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -64,10 +65,24 @@ export default function WeeklyReportCard() {
 
           {stats.goalProgress.length > 0 && (
             <div className="space-y-0.5">
-              {stats.goalProgress.map(g => (
-                <p key={g.name} className="text-xs text-[var(--text-secondary)]">
-                  {g.name}：完成 <span className="font-semibold text-[var(--accent)]">{g.completed}/{g.planned}</span>（{pct(g.completedRate)}）
-                </p>
+              {stats.goalProgress.map((g, gi) => (
+                <div key={g.name}>
+                  <button type="button" aria-label={`展开任务明细 ${g.name}`} data-testid={`report-goal-row-${gi}`}
+                    onClick={() => setExpanded(prev => { const s = new Set(prev); if (s.has(g.name)) s.delete(g.name); else s.add(g.name); return s })}
+                    className="block w-full text-left text-xs text-[var(--text-secondary)]">
+                    {g.name}：完成 <span className="font-semibold text-[var(--accent)]">{g.completed}/{g.planned}</span>（{pct(g.completedRate)}）
+                    <span className="ml-1 text-[var(--text-tertiary)]">{expanded.has(g.name) ? '▾' : '▸'}</span>
+                  </button>
+                  {expanded.has(g.name) && g.tasks.length > 0 && (
+                    <div className="mt-0.5 space-y-0.5 border-l border-[var(--border)] pl-2.5">
+                      {g.tasks.map(t => (
+                        <p key={t.name} data-testid={`report-task-${gi}-${t.name}`} className="text-xs text-[var(--text-tertiary)]">
+                          {t.name}：完成 <span className="font-semibold text-[var(--text-secondary)]">{t.completed}/{t.planned}</span>（{pct(t.completedRate)}）
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}

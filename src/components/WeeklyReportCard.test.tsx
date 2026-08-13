@@ -28,6 +28,7 @@ const seedGoal = async (over: Partial<Goal> & { id?: number; name: string }) =>
   db.goals.add({
     startDate: '2026-08-10',
     createdAt: '2026-08-01T00:00:00',
+    tasks: [],
     ...over,
   })
 
@@ -65,6 +66,29 @@ describe('WeeklyReportCard', () => {
     mount()
     const text = await screen.findByText(/学英语/)
     expect(text.textContent).toContain('1/2')
+  })
+
+  it('目标任务明细：点击目标行展开各任务完成率', async () => {
+    const goalId = await seedGoal({ name: '学英语', tasks: [
+      { id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 },
+      { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 },
+    ] })
+    await seedEvent({ startTime: '2026-08-10T09:00:00', title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1', completed: true })
+    await seedEvent({ startTime: '2026-08-11T09:00:00', title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1' })
+    await seedEvent({ startTime: '2026-08-12T09:00:00', title: '听力', relatedGoalId: goalId, relatedTaskId: 't2', completed: true })
+    const user = userEvent.setup()
+    mount()
+    const row = await screen.findByText(/学英语/)
+    expect(row.textContent).toContain('2/3')
+    // 未展开时无明细
+    expect(screen.queryByText('背单词：完成 1/2（50%）')).not.toBeInTheDocument()
+    await user.click(row)
+    const t1 = await screen.findByTestId('report-task-0-背单词')
+    expect(t1.textContent).toContain('1/2')
+    expect(t1.textContent).toContain('50%')
+    const t2 = screen.getByTestId('report-task-0-听力')
+    expect(t2.textContent).toContain('1/1')
+    expect(t2.textContent).toContain('100%')
   })
 
   it('切周后周范围标签变化', async () => {

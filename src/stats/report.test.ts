@@ -17,6 +17,7 @@ const ev = (over: Partial<CalendarEvent> & { startTime: string }): CalendarEvent
 const goal = (over: Partial<Goal> & { id: number; name: string }): Goal => ({
   startDate: '2026-08-10',
   createdAt: '2026-08-01T00:00:00',
+  tasks: [],
   ...over,
 })
 
@@ -74,15 +75,45 @@ describe('computeReportStats', () => {
     expect(stats.overview).toEqual({ total: 2, completed: 1, completedRate: 0.5, totalMinutes: 120 })
   })
 
-  it('目标进度与下周未完成目标', () => {
+  it('目标进度按任务聚合：目标汇总 + 任务明细', () => {
+    const goals = [goal({ id: 1, name: '学英语', tasks: [
+      { id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 },
+      { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 },
+    ] })]
+    const events = [
+      ev({ startTime: '2026-08-10T09:00:00', title: '背单词', relatedGoalId: 1, relatedTaskId: 't1', completed: true }),
+      ev({ startTime: '2026-08-11T09:00:00', title: '背单词', relatedGoalId: 1, relatedTaskId: 't1' }),
+      ev({ startTime: '2026-08-12T09:00:00', title: '听力', relatedGoalId: 1, relatedTaskId: 't2', completed: true }),
+    ]
+    const stats = computeReportStats(events, goals, '2026-08-10')
+    expect(stats.goalProgress).toEqual([{
+      name: '学英语', planned: 3, completed: 2, completedRate: 2 / 3,
+      tasks: [
+        { name: '背单词', planned: 2, completed: 1, completedRate: 0.5 },
+        { name: '听力', planned: 1, completed: 1, completedRate: 1 },
+      ],
+    }])
+    expect(stats.nextWeek.unfinishedGoals).toEqual(['学英语'])
+  })
+
+  it('旧数据兼容：目标无 tasks 时事件归入「未拆解」任务，名称回退目标名', () => {
     const goals = [goal({ id: 1, name: '学英语' })]
     const events = [
       ev({ startTime: '2026-08-10T09:00:00', title: '学英语 · 第 1 次', relatedGoalId: 1, completed: true }),
       ev({ startTime: '2026-08-11T09:00:00', title: '学英语 · 第 2 次', relatedGoalId: 1 }),
     ]
     const stats = computeReportStats(events, goals, '2026-08-10')
-    expect(stats.goalProgress).toEqual([{ name: '学英语', planned: 2, completed: 1, completedRate: 0.5 }])
-    expect(stats.nextWeek.unfinishedGoals).toEqual(['学英语'])
+    expect(stats.goalProgress).toEqual([{
+      name: '学英语', planned: 2, completed: 1, completedRate: 0.5,
+      tasks: [{ name: '未拆解', planned: 2, completed: 1, completedRate: 0.5 }],
+    }])
+  })
+
+  it('目标任务已删除但事件残留时任务名回退「任务 #id」', () => {
+    const goals = [goal({ id: 1, name: '学英语', tasks: [] })]
+    const events = [ev({ startTime: '2026-08-10T09:00:00', title: '背单词', relatedGoalId: 1, relatedTaskId: 'ghost' })]
+    const stats = computeReportStats(events, goals, '2026-08-10')
+    expect(stats.goalProgress[0].tasks).toEqual([{ name: '任务 #ghost', planned: 1, completed: 0, completedRate: 0 }])
   })
 
   it('时间分布与时段分布', () => {

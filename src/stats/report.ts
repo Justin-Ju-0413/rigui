@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { DEFAULT_TASK_ID } from '../db/types'
 import type { CalendarEvent, Goal } from '../db/types'
 import { expandRecurring, hasOverlap } from '../planner/conflicts'
 
@@ -6,7 +7,13 @@ export interface ReportStats {
   weekStart: string
   weekEnd: string
   overview: { total: number; completed: number; completedRate: number; totalMinutes: number }
-  goalProgress: Array<{ name: string; planned: number; completed: number; completedRate: number }>
+  goalProgress: Array<{
+    name: string
+    planned: number
+    completed: number
+    completedRate: number
+    tasks: Array<{ name: string; planned: number; completed: number; completedRate: number }>
+  }>
   timeDistribution: Array<{ day: number; count: number; minutes: number }>
   dayParts: Array<{ part: 'morning' | 'afternoon' | 'evening'; count: number }>
   freeSlots: { totalMinutes: number; longestMinutes: number; perDay: Array<{ day: number; minutes: number }> }
@@ -103,23 +110,50 @@ export function computeReportStats(events: CalendarEvent[], goals: Goal[], ancho
   const completed = weekEvents.filter(e => e.completed).length
   const totalMinutes = weekEvents.reduce((sum, e) => sum + eventMinutes(e), 0)
 
-  // 目标进度：relatedGoalId 分组
-  const byGoal = new Map<number, { planned: number; completed: number }>()
+  // 目标进度：relatedGoalId → relatedTaskId 两级分组（旧事件无 taskId 归入 default 任务）
+  const byGoal = new Map<number, Map<string, { planned: number; completed: number }>>()
   for (const ev of weekEvents) {
     if (ev.relatedGoalId === undefined) continue
-    const g = byGoal.get(ev.relatedGoalId) ?? { planned: 0, completed: 0 }
-    g.planned++
-    if (ev.completed) g.completed++
-    byGoal.set(ev.relatedGoalId, g)
+    const taskId = ev.relatedTaskId ?? DEFAULT_TASK_ID
+    const byTask = byGoal.get(ev.relatedGoalId) ?? new Map()
+    const t = byTask.get(taskId) ?? { planned: 0, completed: 0 }
+    t.planned++
+    if (ev.completed) t.completed++
+    byTask.set(taskId, t)
+    byGoal.set(ev.relatedGoalId, byTask)
   }
-  const goalName = new Map(goals.filter(g => g.id !== undefined).map(g => [g.id!, g.name]))
+  const goalById = new Map(goals.filter(g => g.id !== undefined).map(g => [g.id!, g]))
   const goalProgress = [...byGoal.entries()]
-    .map(([id, g]) => ({
-      name: goalName.get(id) ?? `目标 #${id}`,
-      planned: g.planned,
-      completed: g.completed,
-      completedRate: g.planned > 0 ? g.completed / g.planned : 0,
-    }))
+    .map(([id, byTask]) => {
+      const g = goalById.get(id)
+      let planned = 0
+      let completed = 0
+      // 输出顺序：目标定义的任务顺序优先，其余（未拆解/残留）按 id 排后
+      const definedIds = (g?.tasks ?? []).map(t => t.id)
+      const otherIds = [...byTask.keys()].filter(id => !definedIds.includes(id)).sort()
+      const tasks = [...definedIds, ...otherIds]
+        .filter(taskId => byTask.has(taskId))
+        .map((taskId) => {
+          const t = byTask.get(taskId)!
+          planned += t.planned
+          completed += t.completed
+          const taskName = g?.tasks?.find(tk => tk.id === taskId)?.name
+            ?? (taskId === DEFAULT_TASK_ID ? '未拆解' : `任务 #${taskId}`)
+          return {
+            name: taskName,
+            planned: t.planned,
+            completed: t.completed,
+            completedRate: t.planned > 0 ? t.completed / t.planned : 0,
+          }
+        })
+      return {
+        name: g?.name ?? `目标 #${id}`,
+        planned,
+        completed,
+        completedRate: planned > 0 ? completed / planned : 0,
+        tasks,
+      }
+    })
     .sort((a, b) => a.name.localeCompare(b.name))
 
   // 时间分布
