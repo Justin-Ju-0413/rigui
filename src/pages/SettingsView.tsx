@@ -9,9 +9,10 @@ import { notifyEventsChanged } from '../events/eventBus'
 
 export default function SettingsView() {
   const { config, save, hasConfig } = useLLMSettings()
-  const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? '')
-  const [apiKey, setApiKey] = useState(config?.apiKey ?? '')
-  const [model, setModel] = useState(config?.model ?? '')
+  // 初始预填 .env.local 默认值（config 加载后会同步覆盖）
+  const [baseUrl, setBaseUrl] = useState(config?.baseUrl ?? import.meta.env.VITE_LLM_BASE_URL ?? '')
+  const [apiKey, setApiKey] = useState(config?.apiKey ?? import.meta.env.VITE_LLM_API_KEY ?? '')
+  const [model, setModel] = useState(config?.model ?? import.meta.env.VITE_LLM_MODEL ?? '')
   const [status, setStatus] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -70,14 +71,14 @@ export default function SettingsView() {
         {hasConfig && <p className="text-sm text-[var(--ok)]">已配置 LLM</p>}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-xs font-medium text-[var(--text-secondary)]">API 地址
-            <input aria-label="API 地址" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://api.deepseek.com/v1" className="input mt-1" />
+            <input aria-label="API 地址" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://api.deepseek.com" className="input mt-1" />
           </label>
           <label className="block text-xs font-medium text-[var(--text-secondary)]">API Key
             <input aria-label="API Key" type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="input mt-1" />
           </label>
         </div>
         <label className="block text-xs font-medium text-[var(--text-secondary)]">模型
-          <input aria-label="模型" value={model} onChange={e => setModel(e.target.value)} placeholder="deepseek-chat" className="input mt-1" />
+          <input aria-label="模型" value={model} onChange={e => setModel(e.target.value)} placeholder="deepseek-v4-flash" className="input mt-1" />
         </label>
         <div className="flex gap-2">
           <button onClick={() => void handleSave()} className="btn btn-primary flex-1">保存</button>
