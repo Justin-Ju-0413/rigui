@@ -5,15 +5,17 @@ import GoalForm from '../components/GoalForm'
 import { scheduleTasks, type ScheduledSlot } from '../planner/schedule'
 import { addEvent } from '../db/crud'
 import { notifyEventsChanged } from '../events/eventBus'
-import type { Goal } from '../db/types'
+import type { Goal, GoalTask } from '../db/types'
 
 export default function GoalView() {
-  const { goals, events, removeCascade, refresh } = useGoals()
+  const { goals, events, removeCascade, removeTaskCascade, refresh } = useGoals()
   const [formVisible, setFormVisible] = useState(false)
   const [editing, setEditing] = useState<Goal | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [deleteInfo, setDeleteInfo] = useState('')
+  const [confirmTask, setConfirmTask] = useState<{ goalId: number; task: GoalTask; count: number } | null>(null)
   const [previewGoalId, setPreviewGoalId] = useState<number | null>(null)
+  const [previewTaskId, setPreviewTaskId] = useState<string | null>(null)
   const [previewSlots, setPreviewSlots] = useState<ScheduledSlot[]>([])
   const [scheduleError, setScheduleError] = useState('')
   const [confirmError, setConfirmError] = useState('')
@@ -21,7 +23,7 @@ export default function GoalView() {
 
   const startDelete = async (goal: Goal) => {
     const count = events.filter(e => e.relatedGoalId === goal.id).length
-    setDeleteInfo(count > 0 ? `将同时删除 ${count} 条关联任务` : '该目标没有关联任务')
+    setDeleteInfo(count > 0 ? `将同时删除 ${count} 条关联事件` : '该目标没有关联事件')
     setConfirmDeleteId(goal.id ?? null)
   }
 
@@ -31,20 +33,32 @@ export default function GoalView() {
     setConfirmDeleteId(null)
   }
 
-  const planWeek = async (goal: Goal) => {
-    setPreviewGoalId(null); setPreviewSlots([]); setScheduleError('')
+  const startTaskDelete = (goal: Goal, task: GoalTask) => {
+    const count = events.filter(e => e.relatedGoalId === goal.id && e.relatedTaskId === task.id).length
+    setConfirmTask({ goalId: goal.id!, task, count })
+  }
+
+  const confirmTaskDelete = async () => {
+    if (!confirmTask) return
+    await removeTaskCascade(confirmTask.goalId, confirmTask.task.id)
+    setConfirmTask(null)
+  }
+
+  const planTask = async (goal: Goal, task: GoalTask) => {
+    setPreviewGoalId(null); setPreviewTaskId(null); setPreviewSlots([]); setScheduleError('')
     const windowStart = dayjs().startOf('day').toDate()
     const windowEnd = dayjs().startOf('day').add(7, 'day').toDate()
     const nowToday = new Date()
-    const slots = scheduleTasks(events, goal, windowStart, windowEnd, nowToday)
+    const slots = scheduleTasks(events, goal, task.id, windowStart, windowEnd, nowToday)
     setPreviewGoalId(goal.id ?? null)
+    setPreviewTaskId(task.id)
     setPreviewSlots(slots)
     if (slots.length === 0) setScheduleError('本周无空档')
-    else if (slots.length < (goal.weeklyFrequency ?? 1)) setScheduleError(`已排 ${slots.length}/${goal.weeklyFrequency ?? 1} 次（周内无更多空档）`)
+    else if (slots.length < task.weeklyFrequency) setScheduleError(`已排 ${slots.length}/${task.weeklyFrequency} 次（周内无更多空档）`)
   }
 
   const confirmSchedule = async () => {
-    if (previewGoalId === null || committing) return
+    if (previewGoalId === null || previewTaskId === null || committing) return
     setCommitting(true)
     setConfirmError('')
     let inserted = 0
@@ -58,10 +72,12 @@ export default function GoalView() {
           reminderOffsets: [],
           repeat: 'none',
           relatedGoalId: previewGoalId,
+          relatedTaskId: previewTaskId,
         })
         inserted++
       }
       setPreviewGoalId(null)
+      setPreviewTaskId(null)
       setPreviewSlots([])
       notifyEventsChanged()
       void refresh()
@@ -69,6 +85,7 @@ export default function GoalView() {
       const remaining = previewSlots.length - inserted
       if (remaining <= 0) {
         setPreviewGoalId(null)
+        setPreviewTaskId(null)
         setPreviewSlots([])
       } else {
         setPreviewSlots(previewSlots.slice(inserted))
@@ -81,6 +98,9 @@ export default function GoalView() {
 
   const WEEKDAYS = '日一二三四五六'
   const fmt = (t: string) => `${WEEKDAYS[dayjs(t).day()]} ${dayjs(t).format('MM-DD HH:mm')}`
+
+  const previewGoal = goals.find(g => g.id === previewGoalId)
+  const previewTask = previewGoal?.tasks.find(t => t.id === previewTaskId)
 
   return (
     <div className="p-4 md:mx-auto md:max-w-2xl md:p-6" data-testid="goal-view">
@@ -113,43 +133,80 @@ export default function GoalView() {
         )
       })()}
 
+      {confirmTask !== null && (
+        <div data-testid="task-delete-confirm" className="card mb-3 rounded-lg p-4 text-sm">
+          <p className="font-medium">
+            {confirmTask.count > 0 ? `将同时删除 ${confirmTask.count} 条关联事件，` : ''}确认删除任务「{confirmTask.task.name}」？
+          </p>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">此操作不可撤销。</p>
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => { void confirmTaskDelete() }} className="btn btn-danger flex-1">确认删除任务</button>
+            <button onClick={() => setConfirmTask(null)} className="btn flex-1">取消</button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2.5">
         {goals.map(goal => {
-          const freq = goal.weeklyFrequency ?? 1
           const weekStart = dayjs().startOf('week').add(1, 'day')
           const weekEnd = weekStart.add(7, 'day')
-          const weekCount = events.filter(e =>
-            e.relatedGoalId === goal.id && dayjs(e.startTime).isAfter(weekStart) && dayjs(e.startTime).isBefore(weekEnd)
-          ).length
           return (
             <section key={goal.id} data-testid={`goal-card-${goal.id}`} className="card rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-base font-semibold">{goal.name}</h2>
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                    <span data-testid="goal-frequency">每周 {freq} 次</span>
-                    <span className="mx-1.5">·</span>
-                    <span data-testid="goal-duration">{goal.durationMinutes ?? 60} 分钟</span>
-                  </p>
                   {goal.endDate && <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">截止 {dayjs(goal.endDate).format('YYYY-MM-DD')}</p>}
                 </div>
                 <button aria-label="编辑" onClick={() => { setEditing(goal); setFormVisible(true) }} className="btn text-xs">编辑</button>
               </div>
-              <p className="mt-2 text-xs" data-testid="goal-week-progress">
-                本周 <span className="font-semibold text-[var(--accent)]">{weekCount}</span>/{freq} 已排
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => { void planWeek(goal) }} disabled={previewGoalId !== null}
-                  data-testid="goal-schedule-btn" className="btn btn-primary flex-1">排期一周</button>
-                <button aria-label="删除" onClick={() => { setFormVisible(false); void startDelete(goal) }} className="btn flex-1">删除</button>
+
+              <div className="mt-2 space-y-1.5">
+                {goal.tasks.map(task => {
+                  const weekCount = events.filter(e =>
+                    e.relatedGoalId === goal.id && e.relatedTaskId === task.id
+                    && dayjs(e.startTime).isAfter(weekStart) && dayjs(e.startTime).isBefore(weekEnd)
+                  ).length
+                  return (
+                    <div key={task.id} data-testid={`task-row-${task.id}`} className="rounded-lg bg-[var(--bg-sidebar)] p-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{task.name}</p>
+                          <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                            每周 <span data-testid={`task-freq-${task.id}`}>{task.weeklyFrequency}</span> 次
+                            <span className="mx-1.5">·</span>
+                            <span data-testid={`task-duration-${task.id}`}>{task.durationMinutes}</span> 分钟
+                          </p>
+                          <p className="mt-0.5 text-xs" data-testid={`task-week-progress-${task.id}`}>
+                            本周 <span className="font-semibold text-[var(--accent)]">{weekCount}</span>/{task.weeklyFrequency} 已排
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1.5">
+                          <button onClick={() => { void planTask(goal, task) }} disabled={previewGoalId !== null}
+                            data-testid="task-schedule-btn" className="btn btn-primary px-3 py-1 text-xs">排期一周</button>
+                          <button aria-label={`删除任务 ${task.name}`} onClick={() => startTaskDelete(goal, task)}
+                            data-testid="task-delete-btn" className="btn px-2.5 py-1 text-xs">删除</button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="mt-3">
+                <button aria-label="删除目标" onClick={() => { setFormVisible(false); void startDelete(goal) }} className="btn w-full text-xs">
+                  删除目标
+                </button>
               </div>
             </section>
           )
         })}
+
         {previewGoalId !== null && previewSlots.length > 0 && (
           <div data-testid="schedule-preview" className="card rounded-lg p-4">
             <h3 className="text-sm font-semibold text-[var(--accent)]">
-              <span data-testid="schedule-success">已排 {previewSlots.length}/{goals.find(g => g.id === previewGoalId)?.weeklyFrequency ?? 1} 次</span>
+              <span data-testid="schedule-success">
+                已排 {previewSlots.length}/{previewTask?.weeklyFrequency ?? 0} 次 · {previewTask?.name ?? ''}
+              </span>
             </h3>
             <ul className="mt-2 space-y-1.5">
               {previewSlots.map(s => (
@@ -164,7 +221,7 @@ export default function GoalView() {
             <div className="mt-3 flex gap-2">
               <button onClick={() => { void confirmSchedule() }} disabled={committing}
                 className="btn btn-primary flex-1">全部确认</button>
-              <button onClick={() => setPreviewGoalId(null)} disabled={committing} className="btn flex-1">放弃</button>
+              <button onClick={() => { setPreviewGoalId(null); setPreviewTaskId(null) }} disabled={committing} className="btn flex-1">放弃</button>
             </div>
           </div>
         )}
@@ -175,7 +232,7 @@ export default function GoalView() {
         )}
         {goals.length === 0 && !formVisible && (
           <div className="card rounded-lg p-6 text-center text-sm text-[var(--text-secondary)]">
-            还没有目标。点击「新建目标」添加一个，然后点「排期一周」自动安排到空闲时段。
+            还没有目标。点击「新建目标」添加一个，拆解为任务后点「排期一周」自动安排到空闲时段。
           </div>
         )}
       </div>
