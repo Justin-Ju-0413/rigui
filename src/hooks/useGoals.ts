@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import { addGoal, deleteGoalCascade, getAllEvents, getAllGoals, updateGoal, type GoalInput } from '../db/crud'
+import {
+  addGoal,
+  addTask as dbAddTask,
+  deleteGoalCascade,
+  getAllEvents,
+  getAllGoals,
+  removeTaskCascade as dbRemoveTaskCascade,
+  updateGoal,
+  updateTask as dbUpdateTask,
+  type GoalInput,
+} from '../db/crud'
 import { subscribeEventsChanged } from '../events/eventBus'
-import type { CalendarEvent, Goal } from '../db/types'
+import type { CalendarEvent, Goal, GoalTask } from '../db/types'
 
 export function useGoals() {
   const [goals, setGoals] = useState<Goal[]>([])
@@ -35,5 +45,21 @@ export function useGoals() {
     return n
   }
 
-  return { goals, events, refresh, save, update, removeCascade }
+  const addTask = async (goalId: number, task: GoalTask) => {
+    await dbAddTask(goalId, task)
+    void refresh()
+  }
+
+  const updateTask = async (goalId: number, task: GoalTask) => {
+    await dbUpdateTask(goalId, task)
+    void refresh()
+  }
+
+  const removeTaskCascade = async (goalId: number, taskId: string) => {
+    const n = await dbRemoveTaskCascade(goalId, taskId)
+    void refresh()
+    return n
+  }
+
+  return { goals, events, refresh, save, update, removeCascade, addTask, updateTask, removeTaskCascade }
 }

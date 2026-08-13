@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { addEvent, getEventsByRange, getAllEvents, updateEvent, deleteEvent, toggleEventCompleted, addGoal, updateGoal, getAllGoals, getEventsByGoal, deleteGoalCascade } from './crud'
+import { addEvent, getEventsByRange, getAllEvents, updateEvent, deleteEvent, toggleEventCompleted, addGoal, updateGoal, getAllGoals, getEventsByGoal, deleteGoalCascade, addTask, updateTask, removeTaskCascade } from './crud'
 import { getSetting, setSetting } from './settings'
 import { db } from './schema'
 import type { CalendarEvent, Goal } from './types'
@@ -72,6 +72,10 @@ describe('goal CRUD', () => {
   const goalInput = (): Omit<Goal, 'id' | 'createdAt'> => ({
     name: '学英语',
     startDate: '2026-08-10',
+    tasks: [
+      { id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 },
+      { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 },
+    ],
     weeklyFrequency: 2,
     durationMinutes: 60,
   })
@@ -82,13 +86,15 @@ describe('goal CRUD', () => {
     expect(goals).toHaveLength(1)
     expect(goals[0].durationMinutes).toBe(60)
     expect(goals[0].id).toBe(id)
+    expect(goals[0].tasks).toHaveLength(2)
+    expect(goals[0].tasks[0]).toMatchObject({ id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 })
   })
 
   it('updateGoal 局部更新', async () => {
     const id = await addGoal(goalInput())
-    await updateGoal(id, { weeklyFrequency: 3 })
+    await updateGoal(id, { tasks: [{ id: 't1', name: '背单词（加强）', weeklyFrequency: 3, durationMinutes: 90 }] })
     const [g] = await getAllGoals()
-    expect(g.weeklyFrequency).toBe(3)
+    expect(g.tasks[0].name).toBe('背单词（加强）')
     expect(g.name).toBe('学英语')
   })
 
@@ -116,5 +122,82 @@ describe('goal CRUD', () => {
   it('addGoal 接受 endDate 可选', async () => {
     await addGoal({ ...goalInput(), endDate: '2026-08-31' })
     expect((await getAllGoals())[0].endDate).toBe('2026-08-31')
+  })
+})
+
+describe('goal task CRUD', () => {
+  beforeEach(async () => {
+    await db.delete()
+    await db.open()
+  })
+
+  const withTasks = async (): Promise<number> => {
+    const id = await addGoal({
+      name: '学英语',
+      startDate: '2026-08-10',
+      tasks: [{ id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 }],
+    })
+    return id
+  }
+
+  it('addTask 向目标追加任务', async () => {
+    const gid = await withTasks()
+    await addTask(gid, { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 })
+    const [g] = await getAllGoals()
+    expect(g.tasks.map(t => t.id)).toEqual(['t1', 't2'])
+  })
+
+  it('updateTask 按 id 替换任务', async () => {
+    const gid = await withTasks()
+    await updateTask(gid, { id: 't1', name: '背单词（加强）', weeklyFrequency: 3, durationMinutes: 90 })
+    const [g] = await getAllGoals()
+    expect(g.tasks).toHaveLength(1)
+    expect(g.tasks[0]).toMatchObject({ id: 't1', name: '背单词（加强）', weeklyFrequency: 3, durationMinutes: 90 })
+  })
+
+  it('removeTaskCascade 移除任务并级联删除其事件，保留其他任务事件', async () => {
+    const gid = await withTasks()
+    await addTask(gid, { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 })
+    await addEvent({ ...base(), title: '背单词', relatedGoalId: gid, relatedTaskId: 't1' })
+    await addEvent({ ...base(), title: '听力', relatedGoalId: gid, relatedTaskId: 't2' })
+    await addEvent({ ...base(), title: '开会' })
+    const deleted = await removeTaskCascade(gid, 't1')
+    expect(deleted).toBe(1)
+    const [g] = await getAllGoals()
+    expect(g.tasks.map(t => t.id)).toEqual(['t2'])
+    const remaining = await getAllEvents()
+    expect(remaining.map(e => e.title).sort()).toEqual(['开会', '听力'].sort())
+  })
+
+  it('addEvent 透传 relatedTaskId', async () => {
+    const gid = await withTasks()
+    await addEvent({ ...base(), title: '背单词', relatedGoalId: gid, relatedTaskId: 't1' })
+    const [ev] = await getAllEvents()
+    expect(ev.relatedTaskId).toBe('t1')
+  })
+})
+
+describe('goal legacy normalization', () => {
+  beforeEach(async () => {
+    await db.delete()
+    await db.open()
+  })
+
+  it('旧目标（无 tasks）读取时合成 default 任务，参数取旧字段', async () => {
+    // 直接写库模拟 v1.4 旧数据
+    await db.goals.add({ name: '健身', startDate: '2026-08-10', weeklyFrequency: 3, durationMinutes: 45, createdAt: new Date().toISOString() } as Goal)
+    const [g] = await getAllGoals()
+    expect(g.tasks).toEqual([{ id: 'default', name: '健身', weeklyFrequency: 3, durationMinutes: 45 }])
+  })
+
+  it('已有 tasks 的目标不被改写', async () => {
+    const gid = await addGoal({
+      name: '学英语',
+      startDate: '2026-08-10',
+      tasks: [{ id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 }],
+    })
+    const [g] = await getAllGoals()
+    expect(g.tasks.map(t => t.id)).toEqual(['t1'])
+    expect(g.id).toBe(gid)
   })
 })
