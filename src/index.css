@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ===== Claude 风格设计令牌 ===== */
+/* ===== 设计令牌：暖色极光液态玻璃 ===== */
 :root {
   --bg: #f5f4f0;
   --bg-sidebar: #faf9f5;
@@ -16,6 +16,25 @@
   --warn-bg: rgba(200, 150, 60, 0.15);
   --warn-fg: #92600a;
   --accent-soft: rgba(201, 100, 66, 0.12);
+
+  /* 液态玻璃表面 */
+  --glass-bg: rgba(255, 255, 255, 0.78);        /* 视觉玻璃（内容卡片，无 blur） */
+  --glass-border: rgba(255, 255, 255, 0.55);
+  --glass-highlight: rgba(255, 255, 255, 0.9);  /* 顶部内高光 */
+  --glass-panel-top: rgba(250, 248, 244, 0.75); /* 底部输入条 */
+  --glass-panel-bottom: rgba(248, 245, 240, 0.85);
+
+  /* 阴影体系 */
+  --shadow-sm: 0 1px 2px rgba(90, 70, 45, 0.05), 0 2px 8px rgba(90, 70, 45, 0.05);
+  --shadow-md: 0 4px 14px rgba(90, 70, 45, 0.1);
+  --shadow-lg: 0 10px 32px rgba(90, 70, 45, 0.16);
+
+  /* 极光墙纸：蜜桃/琥珀/淡紫/暖粉四层光斑 */
+  --aurora-a: rgba(255, 178, 138, 0.8);
+  --aurora-b: rgba(255, 205, 130, 0.62);
+  --aurora-c: rgba(200, 180, 255, 0.58);
+  --aurora-d: rgba(255, 170, 200, 0.5);
+  --aurora-base: linear-gradient(#fdf6ef, #f8efe7);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,6 +53,22 @@
     --warn-bg: rgba(200, 150, 60, 0.2);
     --warn-fg: #e3b341;
     --accent-soft: rgba(217, 119, 87, 0.18);
+
+    --glass-bg: rgba(46, 44, 41, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.13);
+    --glass-highlight: rgba(255, 255, 255, 0.2);
+    --glass-panel-top: rgba(34, 32, 30, 0.75);
+    --glass-panel-bottom: rgba(30, 28, 26, 0.85);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 32px rgba(0, 0, 0, 0.42);
+
+    --aurora-a: rgba(140, 80, 45, 0.6);
+    --aurora-b: rgba(160, 120, 50, 0.45);
+    --aurora-c: rgba(95, 75, 160, 0.55);
+    --aurora-d: rgba(140, 65, 105, 0.5);
+    --aurora-base: linear-gradient(#211c17, #191512);
   }
 }
 
@@ -64,32 +99,103 @@ body {
   background: transparent;
 }
 
-/* ===== 基础表面 ===== */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+/* ===== 极光墙纸 =====
+   固定背景层（z-index -1），四层暖色 radial-gradient + 缓慢漂移。
+   transform-only 动画（GPU 合成）；inset:-80px 防模糊边缘露白。 */
+.aurora-bg {
+  position: fixed;
+  inset: -80px;
+  z-index: -1;
+  pointer-events: none;
+  animation: aurora-drift 40s ease-in-out infinite alternate;
+  will-change: transform;
+  background:
+    radial-gradient(900px 600px at 12% 0%, var(--aurora-a), transparent 62%),
+    radial-gradient(800px 620px at 92% 10%, var(--aurora-b), transparent 58%),
+    radial-gradient(950px 720px at 50% 112%, var(--aurora-c), transparent 62%),
+    radial-gradient(700px 520px at 78% 80%, var(--aurora-d), transparent 58%),
+    var(--aurora-base);
 }
 
+@keyframes aurora-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(4%, -2%, 0) rotate(0.6deg) scale(1.06); }
+}
+
+/* 胶片颗粒：让玻璃有质感 */
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ===== 表面体系 =====
+   分层性能预算：内容卡片用「视觉玻璃」（半透明+内高光，无 backdrop-filter，
+   月视图 35+ 格零合成开销）；固定悬浮层用 .card-glass 真玻璃（≤3 层）。 */
+
+/* 视觉玻璃：所有内容卡片（月格/事件卡/周报卡/表单面板） */
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.12s ease;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--shadow-md);
+}
+
+/* 真玻璃：悬浮层专用（BottomNav 胶囊 / Sidebar 侧栏），blur 由系统合成 */
+.card-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.38));
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(120, 80, 40, 0.05),
+    var(--shadow-md);
+}
+
+/* 底部输入条：真玻璃 + 顶部高光线 */
+.frosted {
+  background: linear-gradient(180deg, var(--glass-panel-top), var(--glass-panel-bottom));
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+
+/* ===== 控件 ===== */
 .btn {
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.55rem 0.9rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-primary);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  transition: background 0.12s ease, border-color 0.12s ease;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.6));
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), var(--shadow-sm);
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
 
 .btn:hover {
-  background: var(--bg-sidebar);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.72));
 }
 
 .btn:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -100,13 +206,14 @@ body {
 
 .btn-primary {
   color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), var(--shadow-sm);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-hover));
+  border-color: transparent;
 }
 
 .btn-danger {
@@ -115,14 +222,15 @@ body {
 
 .input {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.6rem 0.8rem;
   font-size: 0.875rem;
   color: var(--text-primary);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.12s ease;
 }
 
 .input::placeholder {
@@ -131,7 +239,7 @@ body {
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 0 3px var(--accent-soft);
 }
 
 /* ===== 侧边栏导航 ===== */
@@ -139,7 +247,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.55rem 0.8rem;
   font-size: 0.875rem;
   color: var(--text-secondary);
@@ -147,14 +255,16 @@ body {
 }
 
 .nav-item:hover {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--text-primary);
 }
 
+/* 激活态：液态高光块（accent 渐变 + 内高光） */
 .nav-active {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: #fff;
   font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), var(--shadow-sm);
 }
 
 /* 通用细节 */
@@ -170,6 +280,16 @@ input[type="checkbox"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .aurora-bg {
+    animation: none;
+    inset: 0;
+  }
+  .card:hover {
+    transform: none;
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--shadow-sm);
+  }
   *, *::before, *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

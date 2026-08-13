@@ -11,7 +11,8 @@ import AIInputPanel from './components/AIInputPanel'
 
 export default function App() {
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--bg)] md:flex-row">
+    <div className="flex min-h-dvh flex-col md:flex-row">
+      <div className="aurora-bg" aria-hidden="true" />
       <Sidebar />
       <main className="flex min-h-dvh flex-1 flex-col">
         <div className="flex-1 pb-36 md:pb-32">

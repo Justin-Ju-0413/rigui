@@ -9,7 +9,7 @@ const items = [
 
 export default function Sidebar() {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-sidebar)] md:flex">
+    <aside className="card-glass hidden w-60 shrink-0 flex-col md:flex">
       <div className="px-5 pb-4 pt-6">
         <h1 className="text-lg font-semibold tracking-tight">日规</h1>
         <p className="text-xs text-[var(--text-tertiary)]">日程与目标</p>

@@ -72,7 +72,7 @@ export default function AIInputPanel() {
   }
 
   return (
-    <div className="sticky bottom-0 z-20 border-t border-[var(--border)] bg-[var(--bg)]/95 px-4 pb-24 pt-3 backdrop-blur md:py-3">
+    <div className="frosted sticky bottom-0 z-20 px-4 pb-24 pt-3 md:py-3">
       <div className="mx-auto max-w-3xl">
         {error && <p data-testid="parse-error" className="mb-2 text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
         {parsed && (
