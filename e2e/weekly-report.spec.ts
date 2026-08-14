@@ -2,7 +2,19 @@ import { expect, test } from '@playwright/test'
 
 async function clearDb(page: import('@playwright/test').Page) {
   await page.goto('/')
-  await page.evaluate(() => indexedDB.deleteDatabase('rigui'))
+  // open + 清空所有表（避免 deleteDatabase 与 Dexie 打开连接竞争被 blocked）
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const req = indexedDB.open('rigui')
+    req.onerror = () => reject(req.error)
+    req.onsuccess = () => {
+      const d = req.result
+      const names = [...d.objectStoreNames]
+      const tx = d.transaction(names, 'readwrite')
+      for (const n of names) tx.objectStore(n).clear()
+      tx.oncomplete = () => { d.close(); resolve() }
+      tx.onerror = () => reject(tx.error)
+    }
+  }))
   await page.reload()
 }
 
@@ -35,7 +47,7 @@ test('周报卡片：统计渲染 + 完成率 + AI 分析全流程', async ({ pa
   await expect(weeklyItem.getByLabel('完成')).toBeChecked()
 
   // 月视图：简报卡统计
-  await page.goto('/')
+  await page.goto('/month')
   const card = page.getByTestId('weekly-report')
   await expect(card).toBeVisible()
   await expect(page.getByTestId('weekly-report-overview')).toContainText('共 2 项')
@@ -47,7 +59,7 @@ test('周报卡片：统计渲染 + 完成率 + AI 分析全流程', async ({ pa
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
       choices: [{ message: { content: '本周共 2 项日程，完成率 50%，建议为下周预留更多空闲。' } }],
     }) }))
-  await page.goto('/')
+  await page.goto('/month')
   await page.getByTestId('weekly-report-ai').click()
   await expect(page.getByTestId('weekly-report-ai-text')).toContainText('完成率 50%')
 })
@@ -55,7 +67,7 @@ test('周报卡片：统计渲染 + 完成率 + AI 分析全流程', async ({ pa
 test('周报卡片：空周空态 + 未配置 LLM 提示', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-08-10T08:00:00') })
   await clearDb(page)
-  await page.goto('/')
+  await page.goto('/month')
   await expect(page.getByTestId('weekly-report-empty')).toBeVisible()
   await expect(page.getByTestId('weekly-report-ai')).toBeDisabled()
 })

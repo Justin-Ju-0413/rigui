@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, beforeEach } from 'vitest'
@@ -10,7 +11,14 @@ import { setSetting } from '../db/settings'
 import { addEvent } from '../db/crud'
 import { listMessages } from '../db/chat'
 
-const mount = () => render(<LLMProvider><ChatView /></LLMProvider>)
+// StrictMode 与生产一致（e2e 经 main.tsx 使用）
+const mount = () => render(
+  <StrictMode>
+    <LLMProvider>
+      <ChatView />
+    </LLMProvider>
+  </StrictMode>,
+)
 
 const respond = (content: string) =>
   __setLLMTransport(async () => new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
@@ -47,6 +55,7 @@ describe('ChatView', () => {
     expect(screen.getByDisplayValue('和老板开会')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: '确认创建' }))
     await waitFor(async () => expect(await db.events.count()).toBe(1))
+    expect(screen.queryByTestId('preview-card')).not.toBeInTheDocument()
   })
 
   it('取消动作不入库', async () => {
@@ -84,7 +93,7 @@ describe('ChatView', () => {
     const today = dayjs().format('YYYY-MM-DD')
     await addEvent({ title: '健身', startTime: `${today}T19:00:00`, endTime: `${today}T20:00:00`, allDay: false, reminderOffsets: [], repeat: 'none' })
     const bodies: string[] = []
-    __setLLMTransport(async (url, init) => {
+    __setLLMTransport(async (_url, init) => {
       bodies.push(String(init?.body))
       const round = bodies.length
       const content = round === 1

@@ -26,6 +26,8 @@ export default function ChatView() {
   const [error, setError] = useState('')
   const [retryInput, setRetryInput] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const idSeq = useRef(0)
+  const nextId = (prefix: string) => `${prefix}-${idSeq.current++}`
 
   useEffect(() => {
     let cancelled = false
@@ -48,7 +50,7 @@ export default function ChatView() {
     if (!config) { setError('请先在设置页配置 LLM 后使用对话'); return }
     setError('')
     setRetryInput(null)
-    const userMsg: ViewMessage = { id: `u-${Date.now()}`, role: 'user', content: text }
+    const userMsg: ViewMessage = { id: nextId('u'), role: 'user', content: text }
     appendLocal(userMsg)
     await addMessage({ role: 'user', content: text, createdAt: dayjs().format('YYYY-MM-DDTHH:mm:ss') })
     setInput('')
@@ -63,10 +65,10 @@ export default function ChatView() {
     }
     const newMessages: ViewMessage[] = []
     for (const t of result.toolMessages) {
-      newMessages.push({ id: `t-${Date.now()}-${Math.random()}`, role: 'assistant', content: t, isTool: true })
+      newMessages.push({ id: nextId('t'), role: 'assistant', content: t, isTool: true })
     }
     const replyMsg: ViewMessage = {
-      id: `a-${Date.now()}`,
+      id: nextId('a'),
       role: 'assistant',
       content: result.reply,
       actions: result.actions,
@@ -89,25 +91,18 @@ export default function ChatView() {
     if (retryInput) void handleSend(retryInput)
   }
 
-  const handleConfirm = async (action: ChatAction) => {
+  /** 确认/取消按消息 id 定位（动作对象经 ActionCard 编辑后引用已变化，不能用引用匹配） */
+  const handleConfirm = async (messageId: string, action: ChatAction) => {
     const result = await executeAction(action)
     if (!result.ok) { setError(result.message); return }
-    setMessages(prev => prev.map(m =>
-      m.actions?.includes(action)
-        ? { ...m, actions: m.actions.filter(a => a !== action), content: m.content }
-        : m,
-    ))
-    const confirmMsg: ViewMessage = { id: `c-${Date.now()}`, role: 'assistant', content: result.message }
+    setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, actions: undefined } : m)))
+    const confirmMsg: ViewMessage = { id: nextId('c'), role: 'assistant', content: result.message }
     setMessages(prev => [...prev, confirmMsg])
     await addMessage({ role: 'assistant', content: result.message, createdAt: dayjs().format('YYYY-MM-DDTHH:mm:ss') })
   }
 
-  const handleCancel = (action: ChatAction) => {
-    setMessages(prev => prev.map(m =>
-      m.actions?.includes(action)
-        ? { ...m, actions: m.actions.filter(a => a !== action) }
-        : m,
-    ))
+  const handleCancel = (messageId: string) => {
+    setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, actions: undefined } : m)))
   }
 
   const handleClear = async () => {
@@ -143,8 +138,8 @@ export default function ChatView() {
               <ChatMessage role={m.role} content={m.content} />
               {m.actions?.map((a, i) => (
                 <ActionCard key={i} action={a}
-                  onConfirm={act => void handleConfirm(act)}
-                  onCancel={() => handleCancel(a)} />
+                  onConfirm={act => void handleConfirm(m.id, act)}
+                  onCancel={() => handleCancel(m.id)} />
               ))}
             </div>
           )
