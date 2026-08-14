@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- 液态玻璃升级为 Apple Liquid Glass 风格：顶部弧形高光带 + 亮→暗渐变边缘光 + 玻璃厚度内阴影；悬浮层（底部导航/侧栏/输入条）新增指针/触摸跟随的动态光泽（`prefers-reduced-motion` 自动停用）
+- 内容卡片全量启用真玻璃（backdrop-filter），月视图格子用轻 blur 变体（8px）控制 35+ 格的 GPU 开销；无 backdrop-filter 环境自动降级为实色填充
+
 ## [1.6.0] - 2026-08-14
 
 ### Added

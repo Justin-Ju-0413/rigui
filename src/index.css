@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* ===== 设计令牌：暖色极光液态玻璃 ===== */
+/* ===== 设计令牌：暖色极光液态玻璃（Apple Liquid Glass 风格） ===== */
 :root {
   --bg: #f5f4f0;
   --bg-sidebar: #faf9f5;
@@ -17,12 +17,29 @@
   --warn-fg: #92600a;
   --accent-soft: rgba(201, 100, 66, 0.12);
 
-  /* 液态玻璃表面 */
-  --glass-bg: rgba(255, 255, 255, 0.78);        /* 视觉玻璃（内容卡片，无 blur） */
+  /* 液态玻璃表面（控件/输入框沿用） */
+  --glass-bg: rgba(255, 255, 255, 0.78);
   --glass-border: rgba(255, 255, 255, 0.55);
   --glass-highlight: rgba(255, 255, 255, 0.9);  /* 顶部内高光 */
   --glass-panel-top: rgba(250, 248, 244, 0.75); /* 底部输入条 */
   --glass-panel-bottom: rgba(248, 245, 240, 0.85);
+
+  /* Liquid Glass 光效层（明色）：
+     fill=玻璃内部渐变（上亮下暗，模拟厚度）
+     edge=1px 渐变边缘光（上缘亮、下缘弱）
+     specular=表面弧形高光带（环境光反射）
+     thickness=底部内阴影（玻璃厚度感）
+     shine=跟随指针的动态光泽 */
+  --glass-fill-top: rgba(255, 255, 255, 0.72);
+  --glass-fill-bottom: rgba(255, 255, 255, 0.45);
+  --glass-edge-a: rgba(255, 255, 255, 0.85);
+  --glass-edge-b: rgba(255, 255, 255, 0.06);
+  --glass-specular: rgba(255, 255, 255, 0.5);
+  --glass-specular-2: rgba(255, 255, 255, 0.3);
+  --glass-thickness: inset 0 -16px 26px rgba(90, 70, 45, 0.07);
+  --glass-shine: rgba(255, 255, 255, 0.36);
+  --glass-blur: 12px;
+  --glass-sat: 1.45;
 
   /* 阴影体系 */
   --shadow-sm: 0 1px 2px rgba(90, 70, 45, 0.05), 0 2px 8px rgba(90, 70, 45, 0.05);
@@ -59,6 +76,16 @@
     --glass-highlight: rgba(255, 255, 255, 0.2);
     --glass-panel-top: rgba(34, 32, 30, 0.75);
     --glass-panel-bottom: rgba(30, 28, 26, 0.85);
+
+    /* Liquid Glass 光效层（暗色：玻璃更暗、高光更克制、边缘光更明显） */
+    --glass-fill-top: rgba(48, 45, 41, 0.66);
+    --glass-fill-bottom: rgba(38, 36, 32, 0.46);
+    --glass-edge-a: rgba(255, 255, 255, 0.32);
+    --glass-edge-b: rgba(255, 255, 255, 0.03);
+    --glass-specular: rgba(255, 255, 255, 0.2);
+    --glass-specular-2: rgba(255, 255, 255, 0.12);
+    --glass-thickness: inset 0 -16px 26px rgba(0, 0, 0, 0.28);
+    --glass-shine: rgba(255, 255, 255, 0.12);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.2);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.3);
@@ -133,42 +160,117 @@ body {
   pointer-events: none;
 }
 
-/* ===== 表面体系 =====
-   分层性能预算：内容卡片用「视觉玻璃」（半透明+内高光，无 backdrop-filter，
-   月视图 35+ 格零合成开销）；固定悬浮层用 .card-glass 真玻璃（≤3 层）。 */
+/* ===== 液态玻璃体系（Apple Liquid Glass） =====
+   每个玻璃元素 = 玻璃基座 + ::before 高光带 +（悬浮层）::after 动态光泽。
+   - 基座：半透明渐变填充 + backdrop-filter 模糊/增饱和 + 底部厚度内阴影
+   - 边缘光：border 双背景技巧（padding-box 填充 + border-box 亮→暗渐变），
+     取代原来的纯色 1px 边框，形成上缘亮下缘弱的光折射描边
+   - 高光带：顶部弧形白色渐变，模拟环境光在玻璃表面的反射
+   - 光泽：radial 光斑跟随指针（--lx/--ly），仅悬浮层启用，减少重绘面
+   性能分层：内容卡 blur 12px，月格子轻变体 8px，悬浮层 20px。 */
+
+/* 高光带：顶部弧形环境光反射（悬浮层） */
+.card-glass::before,
+.frosted::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(140% 90% at 50% -30%, var(--glass-specular), transparent 55%),
+    radial-gradient(60% 50% at 15% 5%, var(--glass-specular-2), transparent 70%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* 动态光泽：跟随指针的柔和光斑（仅悬浮层），
+   由 useLiquidGlow 在根元素加 lg-active 激活；--lx/--ly 为 0~1 比例，
+   需经 calc 转百分比（无单位数字不是 gradient 位置的合法值） */
+.card-glass::after,
+.frosted::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(34% 65% at calc(var(--lx, 0.5) * 100%) calc(var(--ly, 0.15) * 100%), var(--glass-shine), transparent 72%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+html.lg-active .card-glass::after,
+html.lg-active .frosted::after {
+  opacity: 1;
+}
 
 /* 视觉玻璃：所有内容卡片（月格/事件卡/周报卡/表单面板） */
 .card {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--glass-fill-top), var(--glass-fill-bottom)) padding-box,
+    linear-gradient(180deg, var(--glass-edge-a), var(--glass-edge-b) 45%, var(--glass-edge-a)) border-box;
+  border: 1px solid transparent;
   border-radius: 12px;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(120, 80, 40, 0.05),
+    var(--glass-thickness),
     var(--shadow-sm);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.12s ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(140% 90% at 50% -30%, var(--glass-specular), transparent 55%),
+    radial-gradient(60% 50% at 15% 5%, var(--glass-specular-2), transparent 70%);
+  opacity: 0.85;
+  pointer-events: none;
 }
 
 .card:hover {
   transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
+    inset 0 -1px 0 rgba(120, 80, 40, 0.05),
+    var(--glass-thickness),
     var(--shadow-md);
+}
+
+/* 月视图格子：轻玻璃变体（35+ 格数量下 blur 与高光降级，控 GPU 开销） */
+[data-testid^="month-cell"].card {
+  --glass-blur: 8px;
+  --glass-sat: 1.3;
+}
+[data-testid^="month-cell"].card::before {
+  background: radial-gradient(140% 90% at 50% -30%, var(--glass-specular), transparent 55%);
+  opacity: 0.55;
 }
 
 /* 真玻璃：悬浮层专用（BottomNav 胶囊 / Sidebar 侧栏），blur 由系统合成 */
 .card-glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.38));
+  position: relative;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.4)) padding-box,
+    linear-gradient(180deg, var(--glass-edge-a), var(--glass-edge-b) 45%, var(--glass-edge-a)) border-box;
+  border: 1px solid transparent;
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
   backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid var(--glass-border);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.85),
     inset 0 -1px 0 rgba(120, 80, 40, 0.05),
+    inset 0 -18px 30px rgba(90, 70, 45, 0.08),
     var(--shadow-md);
 }
 
 /* 底部输入条：真玻璃 + 顶部高光线 */
 .frosted {
+  position: relative;
   background: linear-gradient(180deg, var(--glass-panel-top), var(--glass-panel-bottom));
   -webkit-backdrop-filter: blur(16px) saturate(1.5);
   backdrop-filter: blur(16px) saturate(1.5);
@@ -279,6 +381,18 @@ input[type="checkbox"] {
   outline-offset: 2px;
 }
 
+/* 无 backdrop-filter 环境：玻璃退化为实色填充，保证可读性 */
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .card, .card-glass, .frosted {
+    background: var(--bg-card);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .card-glass, .frosted {
+    background: var(--bg-sidebar);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aurora-bg {
     animation: none;
@@ -288,6 +402,8 @@ input[type="checkbox"] {
     transform: none;
     box-shadow:
       inset 0 1px 0 var(--glass-highlight),
+      inset 0 -1px 0 rgba(120, 80, 40, 0.05),
+      var(--glass-thickness),
       var(--shadow-sm);
   }
   *, *::before, *::after {

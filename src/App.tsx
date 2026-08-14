@@ -8,8 +8,10 @@ import ListView from './pages/ListView'
 import GoalView from './pages/GoalView'
 import SettingsView from './pages/SettingsView'
 import AIInputPanel from './components/AIInputPanel'
+import { useLiquidGlow } from './hooks/useLiquidGlow'
 
 export default function App() {
+  useLiquidGlow()
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
       <div className="aurora-bg" aria-hidden="true" />

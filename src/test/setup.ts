@@ -9,4 +9,19 @@ testEnv.VITE_LLM_BASE_URL = ''
 testEnv.VITE_LLM_MODEL = ''
 testEnv.VITE_LLM_API_KEY = ''
 
+// jsdom 无 matchMedia：默认「非 reduced-motion」，供 useLiquidGlow 等使用
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList
+}
+
 afterEach(cleanup)

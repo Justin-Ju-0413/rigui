@@ -9,7 +9,7 @@
 - Web 通知提醒（前台调度约 30s 触发；Service Worker 处理通知点击）；周报自动推送（每周日可自定义时间/开关）
 - ICS 导出（兼容 Apple/Google 日历）、JSON 备份导入导出
 - 桌面应用（Electron）：独立窗口、系统通知、保存对话框，`npm run build:app` 打包 .app/.dmg
-- 液态玻璃 UI：暖色极光墙纸 + 玻璃面板 + 弹性动效（分层性能预算，内容卡片零 blur 开销）
+- 液态玻璃 UI（Apple Liquid Glass 风格）：暖色极光墙纸 + 高光带/渐变边缘光玻璃面板 + 指针跟随光泽 + 弹性动效（月视图格子轻 blur 变体控制性能）
 
 ## 快速开始
 
