@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 
 const items = [
-  { to: '/', label: '日程' },
+  { to: '/', label: '对话' },
+  { to: '/month', label: '日程' },
   { to: '/goals', label: '目标' },
   { to: '/list', label: '列表' },
   { to: '/settings', label: '设置' },

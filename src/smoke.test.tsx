@@ -6,6 +6,6 @@ import App from './App'
 describe('App', () => {
   it('渲染根节点', () => {
     render(<MemoryRouter><App /></MemoryRouter>)
-    expect(screen.getByTestId('month-view')).toBeInTheDocument()
+    expect(screen.getByTestId('chat-view')).toBeInTheDocument()
   })
 })

@@ -169,7 +169,8 @@ export default function ChatView() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="frosted sticky bottom-0 z-10 mt-2 rounded-2xl p-3">
+      {/* 移动端 sticky bottom 让出底部导航高度,桌面贴底 */}
+      <div className="frosted sticky bottom-24 z-10 mt-2 rounded-2xl p-3 md:bottom-0">
         <ChatInput value={input} onChange={setInput} onSend={() => void handleSend(input)} disabled={loading} />
       </div>
     </div>

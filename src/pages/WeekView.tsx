@@ -19,7 +19,7 @@ export default function WeekView() {
     <div className="p-4 md:p-6" data-testid="week-view">
       <header className="mb-3 flex items-center justify-between pt-2 md:pt-0">
         <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{dayjs(anchor).format('YYYY年M月')} 第{dayjs(anchor).week()}周</h1>
-        <button aria-label="月视图" onClick={() => navigate('/')} className="btn">月</button>
+        <button aria-label="月视图" onClick={() => navigate('/month')} className="btn">月</button>
       </header>
       <div data-testid="week-grid" className="grid grid-cols-7 gap-1.5 md:gap-2">
         {days.map(day => {
