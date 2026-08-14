@@ -2,6 +2,8 @@
   "name": "rigui",
   "private": true,
   "version": "1.6.0",
+  "description": "移动端优先的 AI 日程计划 PWA/桌面应用（自然语言建日程、目标排期、周报推送）",
+  "author": "Justin-Ju-0413",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
