@@ -8,7 +8,7 @@ import { __setLLMTransport } from '../llm/client'
 import { db } from '../db/schema'
 import { setSetting } from '../db/settings'
 import { addEvent } from '../db/crud'
-import { clearMessages, listMessages } from '../db/chat'
+import { listMessages } from '../db/chat'
 
 const mount = () => render(<LLMProvider><ChatView /></LLMProvider>)
 
@@ -83,7 +83,7 @@ describe('ChatView', () => {
   it('查询动作回填进历史,第二轮请求携带日程数据', async () => {
     const today = dayjs().format('YYYY-MM-DD')
     await addEvent({ title: '健身', startTime: `${today}T19:00:00`, endTime: `${today}T20:00:00`, allDay: false, reminderOffsets: [], repeat: 'none' })
-    let bodies: string[] = []
+    const bodies: string[] = []
     __setLLMTransport(async (url, init) => {
       bodies.push(String(init?.body))
       const round = bodies.length

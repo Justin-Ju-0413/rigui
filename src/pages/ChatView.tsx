@@ -117,8 +117,6 @@ export default function ChatView() {
     setRetryInput(null)
   }
 
-  const pending = messages.filter(m => m.actions?.length)
-
   return (
     <div data-testid="chat-view" className="flex h-full min-h-[70dvh] flex-col md:min-h-[75dvh]">
       <div className="mb-2 flex items-center justify-between">

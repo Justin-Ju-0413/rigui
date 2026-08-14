@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import type { ChatAction } from '../../ai/chatTypes'
-import { validateParsedEvent, type ParsedEventInput } from '../../ai/schema'
+import type { ParsedEventInput } from '../../ai/schema'
 import { findConflicts } from '../../planner/conflicts'
 import { scheduleTasks, type ScheduledSlot } from '../../planner/schedule'
 import { getAllEvents, getAllGoals } from '../../db/crud'
