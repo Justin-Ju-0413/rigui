@@ -55,6 +55,23 @@ describe('startForegroundScheduler', () => {
     }
   })
 
+  it('周日到点：tick 触发周报推送（与事件提醒同通道）', async () => {
+    const now = () => Date.parse('2026-08-09T20:00:00') // 周日 20:00
+    await addEvent({ title: '晨会', startTime: '2026-08-03T09:00:00', endTime: '2026-08-03T09:30:00', allDay: false, reminderOffsets: [], repeat: 'none' })
+    const notify = vi.fn()
+    vi.useFakeTimers()
+    const stop = startForegroundScheduler({ now, notify, onError: () => {}, intervalMs: 30000 })
+    try {
+      await vi.advanceTimersByTimeAsync(10)
+      expect(notify).toHaveBeenCalledTimes(1)
+      expect(notify.mock.calls[0][0]).toBe('本周简报')
+      expect(String(notify.mock.calls[0][1])).toContain('完成 0/1 项')
+      expect(localStorage.getItem('rigui_weekly_report_sent')).toBe('2026-08-03')
+    } finally {
+      stop()
+    }
+  })
+
   it('多个到期事件中单个失败不影响其他标记', async () => {
     const now = () => Date.parse('2026-08-06T08:00:00')
     await addEvent({ title: 'A', startTime: '2026-08-06T08:00:00', endTime: '2026-08-06T08:30:00', allDay: false, reminderOffsets: [0], repeat: 'none' })

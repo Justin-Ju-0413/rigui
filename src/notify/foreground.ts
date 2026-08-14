@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
-import { getAllEvents } from '../db/crud'
+import { getAllEvents, getAllGoals } from '../db/crud'
 import { dueReminders } from './scheduler'
+import { maybeSendWeeklyReport } from './weeklyReport'
 
 const STORAGE_KEY = 'rigui_notified'
 const NOTIFIED_MAX = 500
@@ -40,7 +41,6 @@ export function startForegroundScheduler(opts: SchedulerOpts = {}): () => void {
       const events = await getAllEvents()
       const notified = loadNotified()
       const due = dueReminders(events, now(), notified)
-      if (due.length === 0) return
       for (const d of due) {
         const fn = notify ?? defaultNotify
         try {
@@ -49,6 +49,9 @@ export function startForegroundScheduler(opts: SchedulerOpts = {}): () => void {
         } catch (e) { onError(e) }
       }
       saveNotified(notified)
+      // 周报自动推送：仅周日到点触发一次，日常 tick 为 not-time 快速跳过
+      const goals = await getAllGoals()
+      await maybeSendWeeklyReport(new Date(now()), events, goals, { notify: notify ?? defaultNotify, onError })
     } catch (e) { onError(e) }
   }
   void tick()
