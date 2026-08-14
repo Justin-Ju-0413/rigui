@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { useLLMSettings } from '../hooks/useLLMSettings'
 import { chatCompletion } from '../llm/client'
@@ -6,6 +6,8 @@ import { addEvent, getAllEvents } from '../db/crud'
 import { generateIcs } from '../ics/generator'
 import { downloadFile, exportJson, parseImportJson } from '../ics/transfer'
 import { notifyEventsChanged } from '../events/eventBus'
+import { getSetting, setSetting } from '../db/settings'
+import { DEFAULT_REPORT_TIME } from '../notify/weeklyReport'
 
 export default function SettingsView() {
   const { config, save, hasConfig } = useLLMSettings()
@@ -16,6 +18,24 @@ export default function SettingsView() {
   const [status, setStatus] = useState<string | null>(null)
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // 周报推送设置（默认开启、周日 20:00）
+  const [reportEnabled, setReportEnabled] = useState(true)
+  const [reportTime, setReportTime] = useState(DEFAULT_REPORT_TIME)
+  const [reportMsg, setReportMsg] = useState('')
+  useEffect(() => {
+    void (async () => {
+      const [enabled, time] = await Promise.all([getSetting('weekly_report_enabled'), getSetting('weekly_report_time')])
+      if (enabled !== null) setReportEnabled(enabled !== '0')
+      if (time) setReportTime(time)
+    })()
+  }, [])
+
+  const handleSaveReport = async () => {
+    await setSetting('weekly_report_enabled', reportEnabled ? '1' : '0')
+    await setSetting('weekly_report_time', reportTime)
+    setReportMsg('周报设置已保存')
+  }
 
   const [prevConfig, setPrevConfig] = useState(config)
   if (config !== prevConfig) {
@@ -85,6 +105,21 @@ export default function SettingsView() {
           <button onClick={() => void handleTest()} className="btn flex-1">测试连接</button>
         </div>
         {status && <p data-testid="status" className="text-sm text-[var(--text-secondary)]">{status}</p>}
+      </section>
+      <section className="card space-y-3 rounded-lg p-4" data-testid="report-section">
+        <h2 className="text-sm font-semibold text-[var(--text-secondary)]">周报推送</h2>
+        <p className="text-xs text-[var(--text-tertiary)]">每周日 20:00 自动推送本周简报通知（可修改时间）。</p>
+        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+          <input type="checkbox" aria-label="启用周报推送" checked={reportEnabled} onChange={e => setReportEnabled(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+          启用周报推送
+        </label>
+        <label className="block text-xs font-medium text-[var(--text-secondary)]">推送时间
+          <input type="time" aria-label="周报推送时间" value={reportTime} onChange={e => setReportTime(e.target.value)} className="input mt-1" />
+        </label>
+        <div className="flex items-center gap-2">
+          <button onClick={() => void handleSaveReport()} className="btn btn-primary flex-1">保存周报设置</button>
+          {reportMsg && <p data-testid="report-msg" className="text-sm text-[var(--text-secondary)]">{reportMsg}</p>}
+        </div>
       </section>
       <section className="card space-y-3 rounded-lg p-4" data-testid="transfer-section">
         <h2 className="text-sm font-semibold text-[var(--text-secondary)]">导出 / 导入</h2>

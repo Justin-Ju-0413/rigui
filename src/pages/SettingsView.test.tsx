@@ -47,6 +47,38 @@ describe('SettingsView', () => {
     expect(await getSetting('llm_base_url')).toBe('https://api.example.com/v1')
   })
 
+  it('周报推送：默认开启 + 20:00，可修改时间并保存', async () => {
+    const user = userEvent.setup()
+    render(<MemoryRouter><SettingsView /></MemoryRouter>)
+    const checkbox = await screen.findByLabelText('启用周报推送')
+    expect(checkbox).toBeChecked()
+    expect(screen.getByLabelText('周报推送时间')).toHaveValue('20:00')
+    await user.clear(screen.getByLabelText('周报推送时间'))
+    await user.type(screen.getByLabelText('周报推送时间'), '21:30')
+    await user.click(screen.getByRole('button', { name: '保存周报设置' }))
+    await waitFor(async () => expect(await getSetting('weekly_report_time')).toBe('21:30'))
+    expect(await getSetting('weekly_report_enabled')).toBe('1')
+  })
+
+  it('周报推送：可关闭开关并持久化', async () => {
+    const user = userEvent.setup()
+    render(<MemoryRouter><SettingsView /></MemoryRouter>)
+    const checkbox = await screen.findByLabelText('启用周报推送')
+    await user.click(checkbox)
+    await user.click(screen.getByRole('button', { name: '保存周报设置' }))
+    await waitFor(async () => expect(await getSetting('weekly_report_enabled')).toBe('0'))
+  })
+
+  it('周报推送：已存值回填', async () => {
+    await setSetting('weekly_report_enabled', '0')
+    await setSetting('weekly_report_time', '21:30')
+    render(<MemoryRouter><SettingsView /></MemoryRouter>)
+    await waitFor(async () => {
+      expect(await screen.findByLabelText('启用周报推送')).not.toBeChecked()
+      expect(screen.getByLabelText('周报推送时间')).toHaveValue('21:30')
+    })
+  })
+
   it('导入 JSON 后广播事件变更', async () => {
     let notified = 0
     const unsub = subscribeEventsChanged(() => { notified += 1 })

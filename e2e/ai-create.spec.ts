@@ -17,7 +17,7 @@ async function seedConfig(page: import('@playwright/test').Page) {
   await page.getByLabel('API 地址').fill('https://mock.local/v1')
   await page.getByLabel('API Key').fill('sk-test')
   await page.getByLabel('模型').fill('test-model')
-  await page.getByRole('button', { name: '保存' }).click()
+  await page.getByRole('button', { name: '保存', exact: true }).click()
 }
 
 test('自然语言创建日程全流程：输入→预览→确认→月视图可见', async ({ page }) => {
