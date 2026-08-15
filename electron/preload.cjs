@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('rigui', {
   isElectron: true,
   notify: (title, body) => ipcRenderer.send('notify', title, body),
   saveFile: (defaultName, content) => ipcRenderer.invoke('save-file', defaultName, content),
+  llmChat: (req) => ipcRenderer.invoke('llm-chat', req),
 })

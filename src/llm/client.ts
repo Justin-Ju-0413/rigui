@@ -31,6 +31,20 @@ export async function chatCompletion(
 ): Promise<LLMChatResult> {
   if (!config.apiKey) return { content: null, errorKind: 'config', errorMessage: '未配置 API Key' }
   if (!config.baseUrl) return { content: null, errorKind: 'config', errorMessage: '未配置 API 地址' }
+  // Electron 桌面端：经 main 进程代理请求（Node fetch 无 CORS 限制，浏览器网页跨域被端点拦截）
+  const rigui = window.rigui
+  if (rigui?.isElectron) {
+    return rigui.llmChat({
+      baseUrl: config.baseUrl,
+      apiKey: config.apiKey,
+      model: config.model,
+      messages,
+      temperature: opts.temperature ?? 0.3,
+      ...(opts.responseFormat ? { responseFormat: opts.responseFormat } : {}),
+      ...(opts.maxTokens ? { maxTokens: opts.maxTokens } : {}),
+      timeoutMs: opts.timeoutMs,
+    })
+  }
   const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 30000)
@@ -49,9 +63,18 @@ export async function chatCompletion(
     })
     if (!res.ok) {
       const kind: LLMErrorKind = res.status === 401 || res.status === 403 ? 'config' : 'http'
+      // 优先透传服务端 body 里的真实原因（如 401 + CreditsError 余额不足），再回退状态码映射
+      const errData = await res.json().catch(() => null) as { error?: { message?: string } } | null
+      if (errData?.error?.message) {
+        return { content: null, errorKind: kind, errorMessage: errData.error.message }
+      }
       return { content: null, errorKind: kind, errorMessage: errorMessage(res.status) }
     }
-    const data = (await res.json()) as { choices?: { message?: { content?: string } }[] }
+    const data = (await res.json()) as { choices?: { message?: { content?: string } }[]; error?: { message?: string } }
+    // 部分端点 200 时也返回 { error } 对象（如余额不足），透传真实原因而非笼统的"网络异常"
+    if (data.error?.message) {
+      return { content: null, errorKind: 'http', errorMessage: data.error.message }
+    }
     const content = data.choices?.[0]?.message?.content
     return { content: content || null }
   } catch (err) {
