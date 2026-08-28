@@ -12,6 +12,7 @@ interface MonthViewProps {
 export default function MonthView({ initialAnchor }: MonthViewProps = {}) {
   const today = dayjs().startOf('day')
   const [anchor, setAnchor] = useState(initialAnchor ?? today.format('YYYY-MM-DDTHH:mm:ss'))
+  const isCurrentMonth = dayjs(anchor).isSame(today, 'month')
   const base = dayjs(anchor).startOf('month')
   const rangeStart = base.subtract((base.day() + 6) % 7, 'day').format('YYYY-MM-DDTHH:mm:ss')
   const rangeEnd = dayjs(anchor).endOf('month').endOf('week').add(1, 'day').format('YYYY-MM-DDTHH:mm:ss')
@@ -19,20 +20,32 @@ export default function MonthView({ initialAnchor }: MonthViewProps = {}) {
   const grid = useMemo(() => buildMonthGrid(anchor), [anchor])
   const navigate = useNavigate()
 
-  const byDay = new Map<string, typeof events>()
-  for (const ev of events) {
-    const key = dayjs(ev.startTime).format('YYYY-MM-DD')
-    byDay.set(key, [...(byDay.get(key) ?? []), ev])
-  }
+  // 事件按日分组只会在事件集变化时重算（月视图 35+ 格，避免每帧 O(n) 建 Map）
+  const byDay = useMemo(() => {
+    const map = new Map<string, typeof events>()
+    for (const ev of events) {
+      const key = dayjs(ev.startTime).format('YYYY-MM-DD')
+      map.set(key, [...(map.get(key) ?? []), ev])
+    }
+    return map
+  }, [events])
 
   return (
     <div className="p-4 md:p-6" data-testid="month-view">
-      <header className="mb-4 flex items-center justify-between pt-2 md:pt-0">
-        <button aria-label="上个月" onClick={() => setAnchor(dayjs(anchor).subtract(1, 'month').format('YYYY-MM-DDTHH:mm:ss'))}
-          className="btn flex h-9 w-9 items-center justify-center rounded-full">‹</button>
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{dayjs(anchor).format('YYYY年M月')}</h1>
-        <button aria-label="下个月" onClick={() => setAnchor(dayjs(anchor).add(1, 'month').format('YYYY-MM-DDTHH:mm:ss'))}
-          className="btn flex h-9 w-9 items-center justify-center rounded-full">›</button>
+      <header className="mb-4 flex items-center justify-between gap-2 pt-2 md:pt-0">
+        <div className="flex items-center gap-2">
+          <button aria-label="上个月" onClick={() => setAnchor(dayjs(anchor).subtract(1, 'month').format('YYYY-MM-DDTHH:mm:ss'))}
+            className="btn flex h-9 w-9 items-center justify-center rounded-full">‹</button>
+          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{dayjs(anchor).format('YYYY年M月')}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isCurrentMonth && (
+            <button aria-label="今天" onClick={() => setAnchor(today.format('YYYY-MM-DDTHH:mm:ss'))}
+              className="btn h-9 px-3 text-sm">今天</button>
+          )}
+          <button aria-label="下个月" onClick={() => setAnchor(dayjs(anchor).add(1, 'month').format('YYYY-MM-DDTHH:mm:ss'))}
+            className="btn flex h-9 w-9 items-center justify-center rounded-full">›</button>
+        </div>
       </header>
       <WeeklyReportCard />
       <div className="mb-1.5 grid grid-cols-7 text-center text-xs font-medium text-[var(--text-tertiary)] md:text-sm">

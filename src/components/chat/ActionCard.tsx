@@ -8,14 +8,19 @@ import { getAllEvents, getAllGoals } from '../../db/crud'
 import type { CalendarEvent, Goal } from '../../db/types'
 import EventPreviewCard from '../EventPreviewCard'
 
-interface Props {
-  action: ChatAction
+type CreateAction = Extract<ChatAction, { type: 'create_event' }>
+type DeleteAction = Extract<ChatAction, { type: 'delete_event' }>
+type UpdateAction = Extract<ChatAction, { type: 'update_event' }>
+type ScheduleAction = Extract<ChatAction, { type: 'schedule_week' }>
+
+interface CardProps<A extends ChatAction> {
+  action: A
   onConfirm: (action: ChatAction) => void
   onCancel: () => void
 }
 
 /** 写类动作确认卡:create 复用 EventPreviewCard,其余为摘要确认 */
-export default function ActionCard({ action, onConfirm, onCancel }: Props) {
+export default function ActionCard({ action, onConfirm, onCancel }: CardProps<ChatAction>) {
   if (action.type === 'create_event') {
     return <CreateCard action={action} onConfirm={onConfirm} onCancel={onCancel} />
   }
@@ -34,7 +39,7 @@ export default function ActionCard({ action, onConfirm, onCancel }: Props) {
   )
 }
 
-function CreateCard({ action, onConfirm, onCancel }: Props) {
+function CreateCard({ action, onConfirm, onCancel }: CardProps<CreateAction>) {
   const [parsed, setParsed] = useState<ParsedEventInput>(action.payload)
   const [conflicts, setConflicts] = useState<string[]>([])
 
@@ -64,7 +69,7 @@ function CreateCard({ action, onConfirm, onCancel }: Props) {
       parsed={parsed}
       conflicts={conflicts}
       onConfirm={() => onConfirm({ ...action, payload: parsed })}
-      onEdit={setParsed}
+      onEdit={patch => setParsed(prev => ({ ...prev, ...patch }))}
       onCancel={onCancel} />
   )
 }
@@ -79,7 +84,7 @@ function useEventById(id: number): CalendarEvent | null {
   return ev
 }
 
-function DeleteCard({ action, onConfirm, onCancel }: Props) {
+function DeleteCard({ action, onConfirm, onCancel }: CardProps<DeleteAction>) {
   const ev = useEventById(action.payload.id)
   return (
     <div data-testid="action-card" className="card space-y-2.5 rounded-lg p-3.5">
@@ -95,7 +100,7 @@ function DeleteCard({ action, onConfirm, onCancel }: Props) {
   )
 }
 
-function UpdateCard({ action, onConfirm, onCancel }: Props) {
+function UpdateCard({ action, onConfirm, onCancel }: CardProps<UpdateAction>) {
   const ev = useEventById(action.payload.id)
   const patches = Object.entries(action.payload.patch).map(([k, v]) => `${k}: ${String(v)}`)
   return (
@@ -113,7 +118,7 @@ function UpdateCard({ action, onConfirm, onCancel }: Props) {
   )
 }
 
-function ScheduleCard({ action, onConfirm, onCancel }: Props) {
+function ScheduleCard({ action, onConfirm, onCancel }: CardProps<ScheduleAction>) {
   const [preview, setPreview] = useState<{ goals: Goal[]; slots: ScheduledSlot[] } | null>(null)
   const [loading, setLoading] = useState(true)
 

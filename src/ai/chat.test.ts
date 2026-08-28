@@ -67,7 +67,7 @@ describe('executeQueryActions', () => {
   })
 
   it('query_goals 返回目标文本', async () => {
-    await addGoal({ name: '学英语', startDate: '2026-08-10', tasks: [], weeklyFrequency: 3, durationMinutes: 60, createdAt: '' })
+    await addGoal({ name: '学英语', startDate: '2026-08-10', tasks: [], weeklyFrequency: 3, durationMinutes: 60 })
     const texts = await executeQueryActions([{ type: 'query_goals' }], NOW)
     expect(texts[0]).toContain('学英语')
   })

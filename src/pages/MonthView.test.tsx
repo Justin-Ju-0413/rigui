@@ -25,4 +25,22 @@ describe('MonthView', () => {
     const cell = await screen.findByTestId('month-cell-2026-08-06')
     await waitFor(() => expect(cell).toHaveTextContent('开会'))
   })
+
+  it('非当月时显示「今天」按钮，点击回到当月并隐藏按钮', async () => {
+    const prevMonth = dayjs().subtract(1, 'month').startOf('month')
+    const user = (await import('@testing-library/user-event')).default
+    render(<MemoryRouter><MonthView initialAnchor={prevMonth.format('YYYY-MM-DDTHH:mm:ss')} /></MemoryRouter>)
+    expect(await screen.findByRole('button', { name: '今天' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '今天' }))
+    expect(await screen.findByText(dayjs().format('YYYY年M月'))).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: '今天' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('当月时不显示「今天」按钮', async () => {
+    render(<MemoryRouter><MonthView /></MemoryRouter>)
+    await screen.findByTestId('month-grid')
+    expect(screen.queryByRole('button', { name: '今天' })).not.toBeInTheDocument()
+  })
 })

@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
+import { useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useEvents } from '../hooks/useEvents'
 
@@ -15,6 +16,16 @@ export default function WeekView() {
   const rangeEnd = days[6].endOf('day').format('YYYY-MM-DDTHH:mm:ss')
   const { events } = useEvents({ rangeStart, rangeEnd })
 
+  // 一次 O(n) 建 Map，替代每格 O(n) 的 filter
+  const byDay = useMemo(() => {
+    const map = new Map<string, typeof events>()
+    for (const ev of events) {
+      const key = dayjs(ev.startTime).format('YYYY-MM-DD')
+      map.set(key, [...(map.get(key) ?? []), ev])
+    }
+    return map
+  }, [events])
+
   return (
     <div className="p-4 md:p-6" data-testid="week-view">
       <header className="mb-3 flex items-center justify-between pt-2 md:pt-0">
@@ -24,7 +35,7 @@ export default function WeekView() {
       <div data-testid="week-grid" className="grid grid-cols-7 gap-1.5 md:gap-2">
         {days.map(day => {
           const key = day.format('YYYY-MM-DD')
-          const dayEvents = events.filter(e => dayjs(e.startTime).format('YYYY-MM-DD') === key)
+          const dayEvents = byDay.get(key) ?? []
           const isToday = key === dayjs().format('YYYY-MM-DD')
           return (
             <div key={key} className={`card flex min-h-28 flex-col rounded-lg p-1 md:min-h-44 md:p-1.5 lg:min-h-56 ${isToday ? 'card !border-[var(--accent)]' : ''}`}>

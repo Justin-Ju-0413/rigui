@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
 describe('App', () => {
-  it('渲染根节点', () => {
+  it('渲染根节点', async () => {
     render(<MemoryRouter><App /></MemoryRouter>)
-    expect(screen.getByTestId('chat-view')).toBeInTheDocument()
+    expect(await screen.findByTestId('chat-view')).toBeInTheDocument()
   })
 })

@@ -8,6 +8,7 @@ import ChatMessage from '../components/chat/ChatMessage'
 import ChatInput from '../components/chat/ChatInput'
 import Suggestions from '../components/chat/Suggestions'
 import ActionCard from '../components/chat/ActionCard'
+import Spinner from '../components/Spinner'
 
 /** 内存消息:tool 回填(不落库,仅参与上下文)与 db 消息统一 */
 interface ViewMessage {
@@ -146,10 +147,8 @@ export default function ChatView() {
         })}
         {loading && (
           <div className="flex justify-start">
-            <div data-testid="chat-loading" className="card flex items-center gap-1.5 rounded-2xl rounded-bl-md px-4 py-3">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-tertiary)]" style={{ animationDelay: '0ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-tertiary)]" style={{ animationDelay: '150ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-tertiary)]" style={{ animationDelay: '300ms' }} />
+            <div data-testid="chat-loading" className="card flex items-center rounded-2xl rounded-bl-md px-4 py-3">
+              <Spinner label="思考中…" />
             </div>
           </div>
         )}

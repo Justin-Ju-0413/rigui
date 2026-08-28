@@ -36,7 +36,7 @@ describe('GoalView', () => {
   it('新建目标：点击新建 → 表单（默认一行任务）→ 保存 → 出现卡片', async () => {
     const user = userEvent.setup()
     render(<MemoryRouter><GoalView /></MemoryRouter>)
-    await user.click(screen.getByRole('button', { name: '新建目标' }))
+    await user.click(screen.getByTestId('goal-new-btn'))
     expect(screen.getByTestId('goal-form')).toBeInTheDocument()
     await user.type(screen.getByLabelText('目标名称'), '健身')
     await user.type(screen.getByLabelText('任务名 1'), '跑步')
