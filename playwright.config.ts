@@ -3,7 +3,9 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  use: { baseURL: 'http://localhost:4173' },
+  // 功能 e2e 一律绕过 Service Worker（navigation precache 的 skipWaiting+claim 会
+  // 在 reload 时接管导航导致 ERR_ABORTED/超时 flake）；PWA 离线行为单测/静态验证覆盖
+  use: { baseURL: 'http://localhost:4173', serviceWorkers: 'block' },
   webServer: {
     command: 'npm run preview',
     port: 4173,

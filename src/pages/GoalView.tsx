@@ -2,6 +2,7 @@ import { useState } from 'react'
 import dayjs from 'dayjs'
 import { useGoals } from '../hooks/useGoals'
 import GoalForm from '../components/GoalForm'
+import EmptyState from '../components/EmptyState'
 import { scheduleTasks, type ScheduledSlot } from '../planner/schedule'
 import { addEvent } from '../db/crud'
 import { notifyEventsChanged } from '../events/eventBus'
@@ -231,9 +232,10 @@ export default function GoalView() {
           </div>
         )}
         {goals.length === 0 && !formVisible && (
-          <div className="card rounded-lg p-6 text-center text-sm text-[var(--text-secondary)]">
-            还没有目标。点击「新建目标」添加一个，拆解为任务后点「排期一周」自动安排到空闲时段。
-          </div>
+          <EmptyState
+            title="还没有目标"
+            detail="点击右上角「+ 新建目标」添加一个，拆解为任务后点「排期一周」自动安排到空闲时段。"
+          />
         )}
       </div>
     </div>

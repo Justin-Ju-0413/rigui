@@ -12,7 +12,7 @@ describe('WeekView', () => {
   it('渲染当周 7 天列', async () => {
     render(<MemoryRouter initialEntries={['/week?date=2026-08-06']}>
       <Routes>
-        <Route path="/" element={<MonthView />} />
+        <Route path="/month" element={<MonthView />} />
         <Route path="/week" element={<WeekView />} />
       </Routes>
     </MemoryRouter>)
@@ -34,7 +34,7 @@ describe('WeekView', () => {
     const user = (await import('@testing-library/user-event')).default
     render(<MemoryRouter initialEntries={['/week?date=2026-08-06']}>
       <Routes>
-        <Route path="/" element={<MonthView />} />
+        <Route path="/month" element={<MonthView />} />
         <Route path="/week" element={<WeekView />} />
       </Routes>
     </MemoryRouter>)

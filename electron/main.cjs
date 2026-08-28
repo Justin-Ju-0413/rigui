@@ -72,8 +72,51 @@ app.whenReady().then(() => {
     return { canceled: false, path: filePath }
   })
 
+  // LLM 代理：renderer fetch 受 CORS 限制（第三方端点常不放行），main 进程 Node fetch 无此限制。
+  // 与 src/llm/client.ts 的解析逻辑保持一致。
+  ipcMain.handle('llm-chat', async (_event, req) => {
+    const { baseUrl, apiKey, model, messages, temperature, responseFormat, maxTokens, timeoutMs } = req ?? {}
+    if (!apiKey) return { content: null, errorKind: 'config', errorMessage: '未配置 API Key' }
+    if (!baseUrl) return { content: null, errorKind: 'config', errorMessage: '未配置 API 地址' }
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs ?? 30000)
+    const url = `${String(baseUrl).replace(/\/$/, '')}/chat/completions`
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: temperature ?? 0.3,
+          ...(responseFormat ? { response_format: { type: 'json_object' } } : {}),
+          ...(maxTokens ? { max_tokens: maxTokens } : {}),
+        }),
+        signal: controller.signal,
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const kind = res.status === 401 || res.status === 403 ? 'config' : 'http'
+        const message = data?.error?.message
+          ?? (res.status === 401 || res.status === 403 ? 'API Key 无效'
+            : res.status === 429 ? '请求过于频繁'
+              : res.status === 404 ? '模型或接口不存在'
+                : `服务端错误 (${res.status})`)
+        return { content: null, errorKind: kind, errorMessage: message }
+      }
+      // 部分端点 200 时也返回 { error } 对象（如余额不足），透传真实原因
+      if (data?.error?.message) return { content: null, errorKind: 'http', errorMessage: data.error.message }
+      return { content: data?.choices?.[0]?.message?.content ?? null }
+    } catch (err) {
+      const timeout = err instanceof Error && err.name === 'AbortError'
+      return { content: null, errorKind: timeout ? 'timeout' : 'network', errorMessage: timeout ? '请求超时' : '网络异常' }
+    } finally {
+      clearTimeout(timer)
+    }
+  })
+
   // 供 e2e 冒烟断言 handler 注册状态（ipcMain.handle 不计入 listenerCount）
-  app.riguiHandlers = { notify: true, saveFile: true }
+  app.riguiHandlers = { notify: true, saveFile: true, llmChat: true }
 
   createWindow()
 

@@ -2,7 +2,19 @@ import { expect, test } from '@playwright/test'
 
 async function clearDb(page: import('@playwright/test').Page) {
   await page.goto('/')
-  await page.evaluate(() => indexedDB.deleteDatabase('rigui'))
+  // open + 清空所有表（避免 deleteDatabase 与 Dexie 打开连接竞争被 blocked）
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const req = indexedDB.open('rigui')
+    req.onerror = () => reject(req.error)
+    req.onsuccess = () => {
+      const d = req.result
+      const names = [...d.objectStoreNames]
+      const tx = d.transaction(names, 'readwrite')
+      for (const n of names) tx.objectStore(n).clear()
+      tx.oncomplete = () => { d.close(); resolve() }
+      tx.onerror = () => reject(tx.error)
+    }
+  }))
   await page.reload()
 }
 
@@ -22,7 +34,7 @@ test('目标任务排期全流程：新建(拆任务) → 排期一周 → 预�
   await expect(page.getByTestId('schedule-item')).toHaveCount(2)
   await page.getByRole('button', { name: '全部确认' }).click()
   await expect(page.getByTestId('schedule-preview')).toBeHidden()
-  await page.goto('/')
+  await page.goto('/month')
   await expect(page.getByTestId('month-cell-2026-08-10')).toContainText('背单词')
   await expect(page.getByTestId('month-cell-2026-08-11')).toContainText('背单词')
 })
@@ -43,7 +55,7 @@ test('目标删除级联：删除目标后任务不留在月视图', async ({ pa
   await page.getByRole('button', { name: '确认删除' }).click()
   await expect(page.getByTestId('goal-delete-confirm')).toBeHidden()
   await expect(page.getByRole('heading', { name: '健身' })).toBeHidden()
-  await page.goto('/')
+  await page.goto('/month')
   await expect(page.getByTestId('month-cell-2026-08-10')).not.toContainText('跑步')
 })
 
@@ -74,7 +86,7 @@ test('任务删除级联：删除任务后其事件消失、其他任务保留',
   await expect(page.locator('[data-testid^="task-row-"]', { hasText: '背单词' })).toHaveCount(0)
   await expect(page.locator('[data-testid^="task-row-"]', { hasText: '听力' })).toHaveCount(1)
   // 月视图：背单词事件消失，听力保留
-  await page.goto('/')
+  await page.goto('/month')
   await expect(page.getByTestId('month-cell-2026-08-10')).not.toContainText('背单词')
   await expect(page.getByTestId('month-cell-2026-08-10')).toContainText('听力')
 })

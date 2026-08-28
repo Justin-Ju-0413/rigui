@@ -29,5 +29,22 @@ export default defineConfig(({ mode }) => ({
       },
     }),
   ],
-  server: { host: true },
+  server: {
+    host: true,
+    // 开发代理：浏览器跨域访问第三方 LLM 端点会被 CORS 拦截，
+    // 配置 baseUrl 为 http://localhost:5175/llm/zen/v1 时经此代理转发（仅 dev 生效）
+    proxy: {
+      '/llm': {
+        target: 'https://opencode.ai',
+        changeOrigin: true,
+        rewrite: p => p.replace(/^\/llm/, ''),
+        configure: (proxy) => {
+          // 部分 LLM 端点检测到 Origin 头即拒绝（防网页盗用），转发时剥离
+          proxy.on('proxyReq', proxyReq => {
+            proxyReq.removeHeader('origin')
+          })
+        },
+      },
+    },
+  },
 }))
