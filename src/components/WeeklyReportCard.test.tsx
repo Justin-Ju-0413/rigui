@@ -11,6 +11,14 @@ import type { CalendarEvent, Goal } from '../db/types'
 
 const mount = () => render(<LLMProvider><WeeklyReportCard /></LLMProvider>)
 
+const currentMonday = () => {
+  const today = dayjs()
+  return today.subtract(today.day() === 0 ? 6 : today.day() - 1, 'day').startOf('day')
+}
+
+const thisWeekAt = (dayOffset: number, time = '09:00:00') =>
+  `${currentMonday().add(dayOffset, 'day').format('YYYY-MM-DD')}T${time}`
+
 const seedEvent = async (over: Partial<CalendarEvent> & { startTime: string }) => {
   await db.events.add({
     title: '事件',
@@ -26,7 +34,7 @@ const seedEvent = async (over: Partial<CalendarEvent> & { startTime: string }) =
 
 const seedGoal = async (over: Partial<Goal> & { id?: number; name: string }) =>
   db.goals.add({
-    startDate: '2026-08-10',
+    startDate: currentMonday().format('YYYY-MM-DD'),
     createdAt: '2026-08-01T00:00:00',
     tasks: [],
     ...over,
@@ -48,8 +56,8 @@ describe('WeeklyReportCard', () => {
   })
 
   it('统计渲染：概览/时长/冲突', async () => {
-    await seedEvent({ startTime: '2026-08-10T09:00:00', title: '开会', completed: true })
-    await seedEvent({ startTime: '2026-08-10T09:30:00', title: '健身' })
+    await seedEvent({ startTime: thisWeekAt(0), title: '开会', completed: true })
+    await seedEvent({ startTime: thisWeekAt(0, '09:30:00'), title: '健身' })
     mount()
     const overview = await screen.findByTestId('weekly-report-overview')
     expect(overview.textContent).toContain('共 2 项')
@@ -61,8 +69,8 @@ describe('WeeklyReportCard', () => {
 
   it('目标进度展示', async () => {
     const goalId = await seedGoal({ name: '学英语' })
-    await seedEvent({ startTime: '2026-08-10T09:00:00', title: '学英语 · 第 1 次', relatedGoalId: goalId, completed: true })
-    await seedEvent({ startTime: '2026-08-11T09:00:00', title: '学英语 · 第 2 次', relatedGoalId: goalId })
+    await seedEvent({ startTime: thisWeekAt(0), title: '学英语 · 第 1 次', relatedGoalId: goalId, completed: true })
+    await seedEvent({ startTime: thisWeekAt(1), title: '学英语 · 第 2 次', relatedGoalId: goalId })
     mount()
     const text = await screen.findByText(/学英语/)
     expect(text.textContent).toContain('1/2')
@@ -73,9 +81,9 @@ describe('WeeklyReportCard', () => {
       { id: 't1', name: '背单词', weeklyFrequency: 2, durationMinutes: 60 },
       { id: 't2', name: '听力', weeklyFrequency: 1, durationMinutes: 30 },
     ] })
-    await seedEvent({ startTime: '2026-08-10T09:00:00', title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1', completed: true })
-    await seedEvent({ startTime: '2026-08-11T09:00:00', title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1' })
-    await seedEvent({ startTime: '2026-08-12T09:00:00', title: '听力', relatedGoalId: goalId, relatedTaskId: 't2', completed: true })
+    await seedEvent({ startTime: thisWeekAt(0), title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1', completed: true })
+    await seedEvent({ startTime: thisWeekAt(1), title: '背单词', relatedGoalId: goalId, relatedTaskId: 't1' })
+    await seedEvent({ startTime: thisWeekAt(2), title: '听力', relatedGoalId: goalId, relatedTaskId: 't2', completed: true })
     const user = userEvent.setup()
     mount()
     const row = await screen.findByText(/学英语/)
@@ -92,7 +100,7 @@ describe('WeeklyReportCard', () => {
   })
 
   it('切周后周范围标签变化', async () => {
-    await seedEvent({ startTime: '2026-08-10T09:00:00' })
+    await seedEvent({ startTime: thisWeekAt(0) })
     const user = userEvent.setup()
     mount()
     await screen.findByTestId('weekly-report-overview')
@@ -103,7 +111,7 @@ describe('WeeklyReportCard', () => {
   })
 
   it('AI 分析成功展示 LLM 文本', async () => {
-    await seedEvent({ startTime: '2026-08-10T09:00:00', title: '开会' })
+    await seedEvent({ startTime: thisWeekAt(0), title: '开会' })
     const restore = __setLLMTransport(async () => new Response(
       JSON.stringify({ choices: [{ message: { content: '本周节奏适中，共 1 项日程。' } }] }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -117,7 +125,7 @@ describe('WeeklyReportCard', () => {
   })
 
   it('AI 分析失败展示错误', async () => {
-    await seedEvent({ startTime: '2026-08-10T09:00:00' })
+    await seedEvent({ startTime: thisWeekAt(0) })
     const restore = __setLLMTransport(async () => new Response('', { status: 500 }))
     const user = userEvent.setup()
     mount()
@@ -128,7 +136,7 @@ describe('WeeklyReportCard', () => {
   })
 
   it('未配置 LLM 时提示先到设置页', async () => {
-    await seedEvent({ startTime: '2026-08-10T09:00:00' })
+    await seedEvent({ startTime: thisWeekAt(0) })
     await db.settings.clear()
     const user = userEvent.setup()
     mount()
