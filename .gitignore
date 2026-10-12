@@ -6,3 +6,8 @@ test-results/
 *.tsbuildinfo
 release/
 .zcode/
+
+# Environment files (never commit real .env; use .env.local, already covered by *.local)
+.env
+.env.*
+!.env.example
