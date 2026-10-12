@@ -114,7 +114,7 @@ export default function ChatView() {
   }
 
   return (
-    <div data-testid="chat-view" className="flex h-full min-h-[70dvh] flex-col md:min-h-[75dvh]">
+    <div data-testid="chat-view" data-llm-ready={config ? "true" : "false"} className="flex h-full min-h-[70dvh] flex-col md:min-h-[75dvh]">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-base font-semibold">对话</h2>
         <button data-testid="chat-clear" onClick={() => void handleClear()}
