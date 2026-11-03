@@ -37,6 +37,8 @@ describe('ChatView', () => {
     const user = userEvent.setup()
     mount()
     expect(screen.getByTestId('chat-empty')).toBeInTheDocument()
+    // LLMContext 异步加载配置;点击若早于 config 就绪会走入"未配置"分支导致收不到回复
+    await waitFor(() => expect(screen.getByTestId('chat-view')).toHaveAttribute('data-llm-ready', 'true'))
     await user.click(screen.getByRole('button', { name: /明天的安排/ }))
     expect(await screen.findByText('好的，我记下了。')).toBeInTheDocument()
     expect(screen.getAllByTestId(/chat-message/)).toHaveLength(2)
